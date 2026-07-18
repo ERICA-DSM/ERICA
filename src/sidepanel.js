@@ -9,7 +9,7 @@ const LANGS = { "한국어": "ko", "영어": "en", "중국어": "zh", "베트남
 const state = {
   lang: "한국어",
   tab: "home",
-  toggles: { filter: true, trans: true, sum: false, rec: false },
+  toggles: { filter: false, trans: false, sum: false, rec: false },
   loginPlan: "gemini",
   guideResult: null,
   userGoal: "",
@@ -36,7 +36,6 @@ const T = {
   "f-sum-d": { ko: "긴 내용을 핵심만 정리해요", en: "Sums up long content", zh: "把长内容归纳要点", vi: "Rút gọn nội dung dài" },
   "f-rec": { ko: "화면 기록", en: "History", zh: "记录", vi: "Lịch sử" },
   "f-rec-d": { ko: "방문한 단계를 저장해 다시 봐요", en: "Saves your steps to revisit", zh: "保存步骤以便回看", vi: "Lưu các bước để xem lại" },
-  "home-safe": { ko: "이 페이지에서 광고·의심 링크를 가려드려요.", en: "I hide ads & suspicious links on this page.", zh: "我会在此页隐藏广告和可疑链接。", vi: "Tôi ẩn quảng cáo & link đáng ngờ trên trang này." },
   "tabl-sum": { ko: "요약본", en: "Summary", zh: "摘要", vi: "Tóm tắt" },
   "tabl-chat": { ko: "대화 내용", en: "Chat", zh: "对话", vi: "Trò chuyện" },
   "tabl-save": { ko: "보관함", en: "Saved", zh: "收藏", vi: "Đã lưu" },
