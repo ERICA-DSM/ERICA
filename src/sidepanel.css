@@ -45,6 +45,18 @@ body{ font-family:'Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
 .wg-plan-name{ font-size:13px; font-weight:800; }
 .wg-plan-desc{ font-size:11px; color:var(--muted); line-height:1.4; }
 
+.wg-onb-note{ font-size:11px; color:var(--muted); margin-top:8px; }
+
+/* 상단 바 플랜 뱃지 */
+.wg-plan-badge{ font-size:10px; font-weight:800; padding:1px 7px; border-radius:9px; margin-left:6px; }
+
+/* 계정 정보 박스 */
+.wg-acct{ background:var(--brand-l); border-radius:10px; padding:10px 12px; }
+.wg-acct-row{ display:flex; justify-content:space-between; align-items:center;
+  font-size:12px; padding:3px 0; }
+.wg-acct-row span{ color:var(--muted); }
+.wg-acct-row b{ color:var(--ink); font-weight:700; }
+
 .wg-settings{ background:#fff; border:1px solid var(--line); border-radius:12px;
   padding:14px; margin-bottom:12px; }
 .wg-input{ width:100%; border:1px solid var(--line); border-radius:8px;

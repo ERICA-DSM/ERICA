@@ -17,13 +17,14 @@ export const DEFAULTS = {
 // 전체 이력은 db.js(IndexedDB)에 별도 저장되어 나중에 조회 가능.
 export const PROFILE_DEFAULTS = {
   name: "",
+  email: "",          // 백엔드 로그인 식별자
   birthday: "",
   gender: "",
   age: "",
   nationality: "",
   lang: "베트남어",   // sidepanel의 언어 선택값과 동일한 라벨 사용
   purpose: "",
-  plan: "gemini",     // "gemini"(무료) | "openai"(유료) — settings.provider와 연동
+  plan: "gemini",     // "gemini"(무료) | "openai"(유료) — 구독 티어
   onboarded: false,
 };
 
@@ -66,7 +67,12 @@ export async function isOnboarded() {
   return !!p.onboarded;
 }
 
-// 로그아웃 = 초기화: 프로필 + API 설정을 모두 제거한다.
+// 프로필만 초기화 (로그아웃 시. 백엔드 토큰은 api.clearAuth 가 별도로 지움)
+export async function clearProfile() {
+  await chrome.storage.local.remove(PROFILE_KEY);
+}
+
+// 로그아웃 = 초기화: 프로필 + 로컬 설정을 모두 제거한다.
 export async function logout() {
   await chrome.storage.local.remove([PROFILE_KEY, KEY]);
 }

@@ -1,0 +1,16 @@
+{
+  "name": "wg-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "웹 길잡이 백엔드 — API 키를 서버에만 두고 플랜(구독)별로 Gemini/OpenAI를 대신 호출하는 프록시",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
