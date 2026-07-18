@@ -5,7 +5,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { login, findByToken, setPlan, bumpUsage } from "./store.js";
-import { guide } from "./llm.js";
+import { guide, summarize } from "./llm.js";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -70,6 +70,22 @@ app.post("/guide", auth, async (req, res) => {
 
   try {
     const out = await guide(req.body || {}, plan, process.env);
+    res.json({ ...out, plan, usage: bump.usage, limit });
+  } catch (e) {
+    res.status(502).json({ error: "llm_error", message: String(e.message || e) });
+  }
+});
+
+// 현재 페이지 요약 (요약 버튼)
+app.post("/summarize", auth, async (req, res) => {
+  const plan = req.user.plan || "gemini";
+  const limit = LIMITS[plan] ?? LIMITS.gemini;
+  const bump = await bumpUsage(req.user.email, limit);
+  if (!bump.ok) {
+    return res.status(429).json({ error: "quota_exceeded", message: "오늘 사용량을 다 썼어요.", usage: bump.usage, limit });
+  }
+  try {
+    const out = await summarize(req.body || {}, plan, process.env);
     res.json({ ...out, plan, usage: bump.usage, limit });
   } catch (e) {
     res.status(502).json({ error: "llm_error", message: String(e.message || e) });

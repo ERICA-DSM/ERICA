@@ -87,3 +87,25 @@ export async function guide(payload) {
   if (data.usage) await setAuth({ ...auth, usage: data.usage, limit: data.limit, plan: data.plan });
   return data;
 }
+
+// 현재 페이지 요약 (요약 버튼)
+export async function summarize(payload) {
+  const auth = await getAuth();
+  if (!auth?.token) throw new Error("로그인이 필요해요.");
+  let res;
+  try {
+    res = await fetch(`${API_BASE}/summarize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + auth.token },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error(`서버에 연결할 수 없어요. 백엔드(${API_BASE})가 켜져 있는지 확인해 주세요.`);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 429) { const e = new Error(data.message || "오늘 사용량을 다 썼어요."); e.code = "quota"; throw e; }
+  if (res.status === 401) { const e = new Error("로그인이 만료됐어요."); e.code = "auth"; throw e; }
+  if (!res.ok) throw new Error(data.message || data.error || "요청 실패");
+  if (data.usage) await setAuth({ ...auth, usage: data.usage, limit: data.limit, plan: data.plan });
+  return data;
+}

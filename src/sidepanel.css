@@ -120,6 +120,10 @@ button{ font-family:inherit; cursor:pointer; }
 .hd-toggle .dot{ width:7px; height:7px; border-radius:50%; background:var(--mut-5); }
 .hd-toggle.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
 .hd-toggle.on .dot{ background:#fff; }
+/* 기능 실행 버튼(요약/캡처) */
+.hd-featbtn{ flex:none; height:38px; padding:0 16px; border-radius:999px; border:1px solid var(--ink);
+  background:var(--ink); color:#fff; font-size:12.5px; font-weight:600; white-space:nowrap; font-family:inherit; }
+.hd-featbtn:disabled{ opacity:.55; }
 
 /* ============ 대화 ============ */
 .hd-chat{ padding:16px 16px 20px; display:flex; flex-direction:column; gap:10px; }
@@ -135,7 +139,25 @@ button{ font-family:inherit; cursor:pointer; }
 .hd-target{ margin-top:9px; border:1px dashed #d4d4d4; border-radius:10px; background:var(--bg-1); padding:10px; }
 .hd-target small{ display:block; font-size:10.5px; color:var(--mut-3); margin-bottom:6px; }
 .hd-target .btnchip{ display:inline-block; border:2px solid var(--ink); border-radius:9px; background:#fff;
-  padding:7px 12px; font-weight:600; font-size:13px; box-shadow:var(--ring); }
+  padding:7px 12px; font-weight:600; font-size:13px; box-shadow:var(--ring); color:var(--ink);
+  font-family:inherit; cursor:pointer; }
+.hd-target .btnchip:hover{ background:var(--bg-2); }
+/* 스텝 네비게이터 (STEP n/N + < >) */
+.hd-stepnav-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
+.hd-stepnav-ctrl{ display:flex; gap:4px; }
+.hd-stepnav-ctrl button{ width:24px; height:24px; border-radius:7px; border:1px solid var(--line);
+  background:#fff; color:var(--ink); font-size:15px; line-height:1; display:flex; align-items:center;
+  justify-content:center; font-family:inherit; padding:0; }
+.hd-stepnav-ctrl button:disabled{ opacity:.35; }
+/* 요약 bullet 카드 */
+.hd-bullets{ align-self:flex-start; max-width:92%; background:var(--bg-2); border-radius:4px 14px 14px 14px;
+  padding:12px 13px; display:flex; flex-direction:column; gap:8px; list-style:none; }
+.hd-bullets li{ display:flex; gap:9px; align-items:flex-start; }
+.hd-bullets .n{ flex:none; width:19px; height:19px; border-radius:50%; background:var(--ink); color:#fff;
+  font-family:var(--mono); font-size:10.5px; display:flex; align-items:center; justify-content:center; }
+.hd-bullets p{ font-size:13px; line-height:1.5; color:var(--ink-2); }
+/* 보관함 캡처 썸네일 */
+.hd-save-row .thumb{ width:38px; height:38px; border-radius:8px; object-fit:cover; border:1px solid var(--line-2); flex:none; }
 .hd-warn{ align-self:flex-start; max-width:90%; background:#fff; border:1px solid var(--line-2);
   border-radius:12px; padding:10px 12px; }
 .hd-warn b{ font-size:11px; color:var(--mut); font-family:var(--mono); letter-spacing:.04em; }

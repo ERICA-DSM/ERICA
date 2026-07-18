@@ -96,6 +96,37 @@ function clearHighlights() {
   document.querySelectorAll(".__wg_badge").forEach((el) => el.remove());
 }
 
+// ---- 광고 가리기: 광고로 판정된 링크 위에 "광고 · AD" 박스를 덮는다 ----
+function coverAds() {
+  clearAdCovers();
+  let count = 0;
+  document.querySelectorAll("a").forEach((a) => {
+    const info = classifyLink(a);
+    if (info.label !== "ad") return;
+    const r = a.getBoundingClientRect();
+    if (r.width < 24 || r.height < 12) return; // 너무 작은 건 스킵
+    a.setAttribute("data-wg-ad", "1");
+    a.style.setProperty("position", "relative", "important");
+    const cover = document.createElement("span");
+    cover.className = "__wg_adcover";
+    cover.textContent = "광고 · AD";
+    Object.assign(cover.style, {
+      position: "absolute", inset: "0", background: "#111", color: "#fff",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: "11px", fontWeight: "700", letterSpacing: ".04em",
+      borderRadius: "4px", zIndex: "2147483000", textDecoration: "none",
+    });
+    cover.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); });
+    a.appendChild(cover);
+    count++;
+  });
+  return count;
+}
+function clearAdCovers() {
+  document.querySelectorAll(".__wg_adcover").forEach((el) => el.remove());
+  document.querySelectorAll("[data-wg-ad]").forEach((el) => { el.style.removeProperty("position"); el.removeAttribute("data-wg-ad"); });
+}
+
 // 하이라이트용 스타일 주입
 function injectStyle() {
   if (document.getElementById("__wg_style")) return;
@@ -119,6 +150,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({ ok: highlightLink(msg.href, msg.text, msg.color) });
   } else if (msg?.type === "WG_CLEAR") {
     clearHighlights();
+    sendResponse({ ok: true });
+  } else if (msg?.type === "WG_FILTER_ADS") {
+    sendResponse({ ok: true, count: coverAds() });
+  } else if (msg?.type === "WG_UNFILTER") {
+    clearAdCovers();
     sendResponse({ ok: true });
   }
   return true; // async response 허용

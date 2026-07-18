@@ -1,5 +1,5 @@
 // sidepanel.js — Hi :D 길잡이 (design/ 핸드오프 반영)
-import { guide, login, changePlan, getAccount, clearAuth } from "./api.js";
+import { guide, summarize, login, changePlan, getAccount, clearAuth } from "./api.js";
 import { getProfile, saveProfile, clearProfile, getHighlightColor, saveHighlightColor } from "./settings.js";
 
 const $ = (id) => document.getElementById(id);
@@ -9,7 +9,7 @@ const LANGS = { "한국어": "ko", "영어": "en", "중국어": "zh", "베트남
 const state = {
   lang: "한국어",
   tab: "home",
-  toggles: { filter: false, trans: false, sum: false, rec: false },
+  toggles: { filter: false },
   loginPlan: "gemini",
   guideResult: null,
   userGoal: "",
@@ -27,15 +27,15 @@ const T = {
   "hero-title": { ko: "무엇을 도와드릴까요?", en: "How can I help?", zh: "需要什么帮助？", vi: "Tôi giúp gì được?" },
   "hero-sub": { ko: "하고 싶은 일을 적어 주세요", en: "Tell me what you want to do", zh: "写下您想做的事", vi: "Hãy viết điều bạn muốn làm" },
   "feat-title": { ko: "기능", en: "Features", zh: "功能", vi: "Tính năng" },
-  "feat-sub": { ko: "필요한 것만 켜세요", en: "Turn on only what you need", zh: "只开需要的", vi: "Chỉ bật cái cần" },
+  "feat-sub": { ko: "필요한 기능을 눌러 쓰세요", en: "Tap a feature to use it", zh: "点按需要的功能", vi: "Chạm để dùng tính năng" },
   "f-filter": { ko: "광고성 글 필터링", en: "Ad filtering", zh: "广告过滤", vi: "Lọc quảng cáo" },
-  "f-filter-d": { ko: "광고·피싱 링크를 자동으로 가려요", en: "Hides ad & phishing links automatically", zh: "自动隐藏广告和钓鱼链接", vi: "Tự ẩn link quảng cáo & lừa đảo" },
-  "f-trans": { ko: "실시간 번역", en: "Live translation", zh: "实时翻译", vi: "Dịch trực tiếp" },
-  "f-trans-d": { ko: "이 페이지를 모국어로 바꿔요", en: "Translates this page to your language", zh: "把页面翻成您的语言", vi: "Dịch trang sang tiếng của bạn" },
+  "f-filter-d": { ko: "광고를 박스로 가리고 \"광고·AD\"로 표시해요", en: "Covers ads with a box labeled \"AD\"", zh: "用方框遮盖广告并标注\"广告\"", vi: "Che quảng cáo bằng ô \"AD\"" },
   "f-sum": { ko: "요약", en: "Summary", zh: "摘要", vi: "Tóm tắt" },
-  "f-sum-d": { ko: "긴 내용을 핵심만 정리해요", en: "Sums up long content", zh: "把长内容归纳要点", vi: "Rút gọn nội dung dài" },
-  "f-rec": { ko: "화면 기록", en: "History", zh: "记录", vi: "Lịch sử" },
-  "f-rec-d": { ko: "방문한 단계를 저장해 다시 봐요", en: "Saves your steps to revisit", zh: "保存步骤以便回看", vi: "Lưu các bước để xem lại" },
+  "f-sum-d": { ko: "현재 화면을 대화창에 요약해요", en: "Summarizes this page into the chat", zh: "把此页面摘要到对话", vi: "Tóm tắt trang này vào trò chuyện" },
+  "f-rec": { ko: "화면 기록", en: "Screen capture", zh: "屏幕记录", vi: "Chụp màn hình" },
+  "f-rec-d": { ko: "지금 화면을 캡처해 보관함에 저장해요", en: "Captures the screen into Saved", zh: "截图并保存到收藏", vi: "Chụp màn hình vào Đã lưu" },
+  "btn-summarize": { ko: "요약하기", en: "Summarize", zh: "摘要", vi: "Tóm tắt" },
+  "btn-capture": { ko: "캡처", en: "Capture", zh: "截图", vi: "Chụp" },
   "tabl-home": { ko: "홈", en: "Home", zh: "主页", vi: "Trang chủ" },
   "tabl-sum": { ko: "요약본", en: "Summary", zh: "摘要", vi: "Tóm tắt" },
   "tabl-chat": { ko: "대화 내용", en: "Chat", zh: "对话", vi: "Trò chuyện" },
@@ -52,7 +52,7 @@ const T = {
 };
 const PH = {
   "login-name": { ko: "예: Nguyen", en: "e.g. Nguyen", zh: "例：Nguyen", vi: "vd: Nguyen" },
-  "hero-input": { ko: "예: 등본을 발급받고 싶어요", en: "e.g. I need a certificate", zh: "例：我要开证明", vi: "vd: Tôi cần giấy chứng nhận" },
+  "hero-input": { ko: "", en: "", zh: "", vi: "" },
 };
 function tr(key) { const c = LANGS[state.lang]; return (T[key] && T[key][c]) || (T[key] && T[key].ko) || ""; }
 function applyI18n() {
@@ -105,18 +105,6 @@ function renderChatPage() {
   if (state.guideResult) buildChatMessages(body);
   else buildChatEmpty(body);
   el.appendChild(body);
-
-  const row = document.createElement("div");
-  row.className = "hd-chat-input";
-  const input = document.createElement("input");
-  input.type = "text"; input.placeholder = tLang(CHAT_TXT.ph);
-  const send = document.createElement("button");
-  send.className = "send"; send.textContent = "➜";
-  const go = () => { const v = input.value.trim(); if (v) runGuide(v); };
-  send.addEventListener("click", go);
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
-  row.appendChild(input); row.appendChild(send);
-  el.appendChild(row);
 }
 
 function buildChatEmpty(body) {
@@ -142,11 +130,72 @@ function buildChatMessages(body) {
   const r = state.guideResult;
   body.appendChild(bubble("user", r.goal));
   if (r.summary) body.appendChild(bubble("bot", r.summary));
+  if (r.kind === "summary") {
+    if (r.bullets && r.bullets.length) body.appendChild(bulletCard(r.bullets));
+    return;
+  }
   const steps = r.steps || [];
-  if (steps.length) body.appendChild(bubble("bot", introMsg(steps.length)));
-  steps.forEach((s, i) => body.appendChild(stepBubble(i + 1, steps.length, s)));
-  if (r.nextLink) body.appendChild(targetCard(r.nextLink, r.tabId));
+  if (steps.length) {
+    body.appendChild(bubble("bot", introMsg(steps.length)));
+    body.appendChild(stepNavigator(steps, r.tabId));
+  }
   if (r.warnings && r.warnings.length) body.appendChild(warnCard(r.warnings));
+}
+
+// 요약 bullet 카드
+function bulletCard(bullets) {
+  const ul = document.createElement("ul"); ul.className = "hd-bullets";
+  bullets.forEach((b, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="n">${i + 1}</span><p></p>`;
+    li.querySelector("p").textContent = b;
+    ul.appendChild(li);
+  });
+  return ul;
+}
+
+// 스텝 네비게이터: STEP n/N + < > 로 단계 이동, 각 단계의 버튼을 페이지에서 자동 하이라이트
+function stepNavigator(steps, tabId) {
+  let idx = 0;
+  const wrap = document.createElement("div"); wrap.className = "hd-step";
+  async function highlightCurrent() {
+    const s = steps[idx];
+    if (!s || !s.label) { setStatus(""); return; }
+    try {
+      const color = await getHighlightColor();
+      const res = await sendToContent(tabId, { type: "WG_HIGHLIGHT", href: s.href, text: s.label, color });
+      setStatus(res?.ok ? `STEP ${idx + 1}: 페이지에서 표시했어요 ✓` : "그 버튼을 페이지에서 못 찾았어요.");
+    } catch { /* 특수 페이지 */ }
+  }
+  function render() {
+    const s = steps[idx];
+    wrap.innerHTML = "";
+    const head = document.createElement("div"); head.className = "hd-stepnav-head";
+    const n = document.createElement("span"); n.className = "hd-step-n"; n.textContent = `STEP ${idx + 1}/${steps.length}`;
+    const ctrl = document.createElement("div"); ctrl.className = "hd-stepnav-ctrl";
+    const prev = document.createElement("button"); prev.textContent = "‹"; prev.disabled = idx === 0;
+    const next = document.createElement("button"); next.textContent = "›"; next.disabled = idx === steps.length - 1;
+    prev.addEventListener("click", () => { if (idx > 0) { idx--; render(); highlightCurrent(); } });
+    next.addEventListener("click", () => { if (idx < steps.length - 1) { idx++; render(); highlightCurrent(); } });
+    ctrl.appendChild(prev); ctrl.appendChild(next);
+    head.appendChild(n); head.appendChild(ctrl);
+    wrap.appendChild(head);
+    const txt = document.createElement("div"); txt.className = "hd-step-txt"; txt.textContent = s.text;
+    wrap.appendChild(txt);
+    if (s.label) {
+      const tgt = document.createElement("div"); tgt.className = "hd-target";
+      const lbl = { ko: "화면에서 이 버튼을 누르세요", en: "Press this button on the page", zh: "在页面上点这个按钮", vi: "Nhấn nút này trên trang" }[LANGS[state.lang]];
+      const small = document.createElement("small"); small.textContent = lbl; tgt.appendChild(small);
+      const chip = document.createElement("button"); chip.className = "btnchip"; chip.textContent = `▸ ${s.label}`;
+      chip.title = { ko: "페이지에서 찾기", en: "Find on page", zh: "在页面查找", vi: "Tìm trên trang" }[LANGS[state.lang]];
+      chip.addEventListener("click", highlightCurrent);
+      tgt.appendChild(chip);
+      wrap.appendChild(tgt);
+    }
+  }
+  render();
+  highlightCurrent(); // 첫 스텝 자동 하이라이트
+  return wrap;
 }
 
 // ---------- 로그인 ----------
@@ -240,7 +289,62 @@ function renderToggles() {
   });
 }
 document.querySelectorAll("[data-feat]").forEach((btn) =>
-  btn.addEventListener("click", () => { state.toggles[btn.dataset.feat] = !state.toggles[btn.dataset.feat]; renderToggles(); }));
+  btn.addEventListener("click", async () => {
+    const f = btn.dataset.feat;
+    state.toggles[f] = !state.toggles[f];
+    renderToggles();
+    if (f === "filter") {
+      try {
+        const tab = await getActiveTab();
+        if (tab?.id) {
+          const res = await sendToContent(tab.id, { type: state.toggles.filter ? "WG_FILTER_ADS" : "WG_UNFILTER" });
+          setStatus(state.toggles.filter ? `광고 ${res?.count ?? 0}개를 가렸어요 ✓` : "광고 가리기를 껐어요.");
+        }
+      } catch { setStatus("이 페이지에서는 광고 가리기를 쓸 수 없어요.", true); }
+    }
+  }));
+
+// ---- 요약 버튼: 현재 화면을 대화창에 요약 ----
+$("btn-summarize")?.addEventListener("click", async () => {
+  const btn = $("btn-summarize"); btn.disabled = true;
+  setStatus("현재 화면을 요약하는 중…");
+  setTab("chat");
+  const body = $("tab-chat").querySelector(".hd-chat-body");
+  if (body) body.innerHTML = `<div class="hd-bub bot">${esc(loadingMsg())}</div>`;
+  try {
+    const tab = await getActiveTab();
+    if (!tab?.id) throw new Error("활성 탭을 찾을 수 없어요.");
+    const page = await sendToContent(tab.id, { type: "WG_EXTRACT" });
+    if (!page) throw new Error("페이지를 읽지 못했어요. 새로고침 후 다시 시도해 주세요.");
+    const out = await summarize({ lang: state.lang, pageTitle: page.title, pageText: page.pageText });
+    state.guideResult = { kind: "summary", goal: tr("f-sum"), summary: out.summary, bullets: out.bullets || [], pageTitle: page.title };
+    renderChatPage();
+    await saveEntry({ type: "summary", title: page.title || tr("f-sum"), at: new Date().toISOString() });
+    renderAccount(await getAccount());
+    setStatus(out.mock ? "· 데모(mock) 요약이에요. 서버에 키를 넣으면 실제 AI로 바뀝니다." : "");
+  } catch (e) {
+    if (e.code === "quota") { setTab("my"); setStatus(e.message, true); renderAccount(await getAccount()); }
+    else if (e.code === "auth") { await clearAuth(); showLogin(); setStatus(e.message, true); }
+    else { const b = $("tab-chat").querySelector(".hd-chat-body"); if (b) b.innerHTML = `<div class="hd-bub bot">${esc("오류: " + e.message)}</div>`; setStatus("오류: " + e.message, true); }
+  } finally { btn.disabled = false; }
+});
+
+// ---- 화면 기록 버튼: 지금 화면 캡처 → 보관함 ----
+$("btn-capture")?.addEventListener("click", async () => {
+  const btn = $("btn-capture"); btn.disabled = true;
+  setStatus("화면을 캡처하는 중…");
+  try {
+    let thumb = "";
+    try { if (chrome.tabs?.captureVisibleTab) thumb = await chrome.tabs.captureVisibleTab({ format: "png" }); } catch { /* 특수 페이지 캡처 불가 */ }
+    const tab = await getActiveTab();
+    const title = (tab?.title || "화면") + " 캡처";
+    await saveEntry({ type: "capture", title, at: new Date().toISOString(), thumb });
+    setTab("save");
+    setStatus("보관함에 저장했어요 ✓");
+  } catch (e) {
+    setStatus("캡처 실패: " + e.message, true);
+  } finally { btn.disabled = false; }
+});
 
 // ---------- 안내(홈 입력 → 대화) ----------
 async function getActiveTab() {
@@ -346,11 +450,16 @@ async function renderSaved() {
     el.innerHTML = `<div class="hd-empty">${esc(empty)}</div>`; return;
   }
   el.innerHTML = "";
+  const TYPE = { guide: { chip: "GUIDE", em: "🧭" }, summary: { chip: "SUM", em: "📝" }, capture: { chip: "SHOT", em: "📸" } };
   list.forEach((it) => {
+    const meta = TYPE[it.type] || TYPE.guide;
     const row = document.createElement("div"); row.className = "hd-save-row";
     const d = new Date(it.at); const date = `${d.getMonth() + 1}/${d.getDate()}`;
-    row.innerHTML = `<div class="ic"><span style="filter:grayscale(1)">${it.type === "guide" ? "🧭" : "📝"}</span></div>
-      <div class="meta"><div class="top"><span class="type mono">${it.type === "guide" ? "GUIDE" : "SUM"}</span><span class="date">${date}</span></div>
+    const icon = (it.type === "capture" && it.thumb)
+      ? `<img class="thumb" src="${esc(it.thumb)}" alt="">`
+      : `<div class="ic"><span style="filter:grayscale(1)">${meta.em}</span></div>`;
+    row.innerHTML = `${icon}
+      <div class="meta"><div class="top"><span class="type mono">${meta.chip}</span><span class="date">${date}</span></div>
       <div class="title"></div></div><span class="chev">›</span>`;
     row.querySelector(".title").textContent = it.title;
     el.appendChild(row);
