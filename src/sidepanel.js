@@ -1,248 +1,315 @@
-// sidepanel.js — 패널 UI 로직 (백엔드 프록시 + 플랜 구독 모델)
+// sidepanel.js — Hi :D 길잡이 (design/ 핸드오프 반영)
 import { guide, login, changePlan, getAccount, clearAuth } from "./api.js";
 import { getProfile, saveProfile, clearProfile } from "./settings.js";
 
 const $ = (id) => document.getElementById(id);
-const statusEl = $("status");
-const resultEl = $("result");
+const LANGS = { "한국어": "ko", "영어": "en", "중국어": "zh", "베트남어": "vi" };
 
-const PLAN_LABEL = { gemini: "무료 (Gemini)", openai: "유료 (ChatGPT)" };
+// ---------- 상태 ----------
+const state = {
+  lang: "한국어",
+  tab: "home",
+  toggles: { filter: true, trans: true, sum: false, rec: false },
+  loginPlan: "gemini",
+  guideResult: null,
+  userGoal: "",
+};
 
-function setStatus(msg, isErr = false) {
-  statusEl.textContent = msg || "";
-  statusEl.classList.toggle("err", isErr);
-}
-
-function openSettings(open = true) { $("settings").hidden = !open; }
-$("settings-toggle").addEventListener("click", () => { $("settings").hidden = !$("settings").hidden; });
-
-// ---------- 계정/플랜 표시 ----------
-function renderAccount(account) {
-  if (!account) return;
-  $("acct-email").textContent = account.email || "—";
-  $("acct-plan").textContent = PLAN_LABEL[account.plan] || account.plan || "—";
-  const used = account.usage?.count ?? 0;
-  const limit = account.limit ?? "—";
-  $("acct-usage").textContent = `${used} / ${limit}회`;
-  $("plan-switch-gemini").classList.toggle("selected", account.plan === "gemini");
-  $("plan-switch-openai").classList.toggle("selected", account.plan === "openai");
-  // 상단 바
-  $("profile-name-label").textContent = account.name || account.email || "손님";
-  $("profile-plan-label").textContent = account.plan === "openai" ? "유료" : "무료";
-  $("profile-plan-label").className = "wg-plan-badge " + (account.plan === "openai" ? "wg-plan-paid" : "wg-plan-free");
+// ---------- i18n ----------
+const T = {
+  "login-tagline": { ko: "한국 생활, 쉽게. 제가 한 걸음씩 도와드릴게요.", en: "Life in Korea, made simple. I'll help you, one step at a time.", zh: "在韩生活，变简单。我会一步步帮您。", vi: "Cuộc sống ở Hàn, đơn giản hơn. Tôi sẽ giúp bạn từng bước." },
+  "lbl-lang": { ko: "언어 / Language", en: "Language", zh: "语言", vi: "Ngôn ngữ" },
+  "lbl-name": { ko: "이름 / Name", en: "Name", zh: "姓名", vi: "Tên" },
+  "lbl-email": { ko: "이메일 / Email", en: "Email", zh: "邮箱", vi: "Email" },
+  "lbl-plan": { ko: "플랜 / Plan", en: "Plan", zh: "套餐", vi: "Gói" },
+  "login-btn": { ko: "로그인", en: "Log in", zh: "登录", vi: "Đăng nhập" },
+  "guest-btn": { ko: "로그인 없이 둘러보기", en: "Look around without login", zh: "不登录先看看", vi: "Xem thử không cần đăng nhập" },
+  "hero-title": { ko: "무엇을 도와드릴까요?", en: "How can I help?", zh: "需要什么帮助？", vi: "Tôi giúp gì được?" },
+  "hero-sub": { ko: "하고 싶은 일을 적어 주세요", en: "Tell me what you want to do", zh: "写下您想做的事", vi: "Hãy viết điều bạn muốn làm" },
+  "feat-title": { ko: "기능", en: "Features", zh: "功能", vi: "Tính năng" },
+  "feat-sub": { ko: "필요한 것만 켜세요", en: "Turn on only what you need", zh: "只开需要的", vi: "Chỉ bật cái cần" },
+  "f-filter": { ko: "광고성 글 필터링", en: "Ad filtering", zh: "广告过滤", vi: "Lọc quảng cáo" },
+  "f-filter-d": { ko: "광고·피싱 링크를 자동으로 가려요", en: "Hides ad & phishing links automatically", zh: "自动隐藏广告和钓鱼链接", vi: "Tự ẩn link quảng cáo & lừa đảo" },
+  "f-trans": { ko: "실시간 번역", en: "Live translation", zh: "实时翻译", vi: "Dịch trực tiếp" },
+  "f-trans-d": { ko: "이 페이지를 모국어로 바꿔요", en: "Translates this page to your language", zh: "把页面翻成您的语言", vi: "Dịch trang sang tiếng của bạn" },
+  "f-sum": { ko: "요약", en: "Summary", zh: "摘要", vi: "Tóm tắt" },
+  "f-sum-d": { ko: "긴 내용을 핵심만 정리해요", en: "Sums up long content", zh: "把长内容归纳要点", vi: "Rút gọn nội dung dài" },
+  "f-rec": { ko: "화면 기록", en: "History", zh: "记录", vi: "Lịch sử" },
+  "f-rec-d": { ko: "방문한 단계를 저장해 다시 봐요", en: "Saves your steps to revisit", zh: "保存步骤以便回看", vi: "Lưu các bước để xem lại" },
+  "home-safe": { ko: "이 페이지에서 광고·의심 링크를 가려드려요.", en: "I hide ads & suspicious links on this page.", zh: "我会在此页隐藏广告和可疑链接。", vi: "Tôi ẩn quảng cáo & link đáng ngờ trên trang này." },
+  "tabl-sum": { ko: "요약본", en: "Summary", zh: "摘要", vi: "Tóm tắt" },
+  "tabl-chat": { ko: "대화 내용", en: "Chat", zh: "对话", vi: "Trò chuyện" },
+  "tabl-save": { ko: "보관함", en: "Saved", zh: "收藏", vi: "Đã lưu" },
+  "tabl-my": { ko: "마이페이지", en: "My page", zh: "我的", vi: "Của tôi" },
+  "my-lang-label": { ko: "표시 언어 / Language", en: "Display language", zh: "显示语言", vi: "Ngôn ngữ hiển thị" },
+  "my-plan-label": { ko: "플랜 / Plan", en: "Plan", zh: "套餐", vi: "Gói" },
+  "set-usage-l": { ko: "오늘 사용량", en: "Today's usage", zh: "今日用量", vi: "Dùng hôm nay" },
+  "set-help": { ko: "도움말", en: "Help", zh: "帮助", vi: "Trợ giúp" },
+  "set-privacy": { ko: "개인정보", en: "Privacy", zh: "隐私", vi: "Quyền riêng tư" },
+  "logout-btn": { ko: "로그아웃", en: "Log out", zh: "退出登录", vi: "Đăng xuất" },
+  "site-tag": { ko: "현재 사이트", en: "CURRENT SITE", zh: "当前网站", vi: "TRANG HIỆN TẠI" },
+};
+const PH = {
+  "login-name": { ko: "예: Nguyen", en: "e.g. Nguyen", zh: "例：Nguyen", vi: "vd: Nguyen" },
+  "hero-input": { ko: "예: 등본을 발급받고 싶어요", en: "e.g. I need a certificate", zh: "例：我要开证明", vi: "vd: Tôi cần giấy chứng nhận" },
+};
+function tr(key) { const c = LANGS[state.lang]; return (T[key] && T[key][c]) || (T[key] && T[key].ko) || ""; }
+function applyI18n() {
+  Object.keys(T).forEach((id) => { const el = $(id); if (el) el.textContent = tr(id); });
+  Object.keys(PH).forEach((id) => { const el = $(id); const c = LANGS[state.lang]; if (el) el.placeholder = PH[id][c] || PH[id].ko; });
+  // 언어칩 활성 표시
+  document.querySelectorAll("[data-lang]").forEach((b) => b.classList.toggle("on", b.dataset.lang === state.lang));
 }
 
 // ---------- 화면 전환 ----------
-function showOnboarding(show) {
-  $("onboarding").hidden = !show;
-  $("main-app").hidden = show;
-  $("profile-bar").hidden = show;
+function showLogin() { $("view-login").hidden = false; $("view-app").hidden = true; }
+function showApp() { $("view-login").hidden = true; $("view-app").hidden = false; }
+
+const TABS = ["home", "chat", "sum", "save", "my"];
+function setTab(tab) {
+  state.tab = tab;
+  TABS.forEach((t) => { const el = $("tab-" + t); if (el) el.hidden = t !== tab; });
+  document.querySelectorAll(".hd-tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
+  if (tab === "sum") renderSummary();
+  if (tab === "save") renderSaved();
+  if (tab === "my") renderMy();
 }
 
-async function enterApp(profile, account) {
-  $("lang").value = profile.lang || "베트남어";
-  renderAccount(account);
-  showOnboarding(false);
+// ---------- 로그인 ----------
+function setLoginPlan(plan) {
+  state.loginPlan = plan;
+  document.querySelectorAll("#login-plans button").forEach((b) => b.classList.toggle("on", b.dataset.plan === plan));
+}
+document.querySelectorAll("#login-plans button").forEach((b) => b.addEventListener("click", () => setLoginPlan(b.dataset.plan)));
+document.querySelectorAll("#login-langs [data-lang]").forEach((b) => b.addEventListener("click", () => { state.lang = b.dataset.lang; applyI18n(); }));
+
+async function doLogin({ email, name, plan }) {
+  const account = await login({ email, name, plan, profile: { lang: state.lang } });
+  await saveProfile({ name, email, lang: state.lang, plan, onboarded: true });
+  await enterApp(account);
 }
 
-// ---- 플랜 선택 (온보딩) ----
-let selectedPlan = "";
-function selectPlan(plan) {
-  selectedPlan = plan;
-  $("plan-gemini").classList.toggle("selected", plan === "gemini");
-  $("plan-openai").classList.toggle("selected", plan === "openai");
-}
-$("plan-gemini").addEventListener("click", () => selectPlan("gemini"));
-$("plan-openai").addEventListener("click", () => selectPlan("openai"));
-
-// ---- 시작하기 (로그인 + 구독) ----
-$("start-btn").addEventListener("click", async () => {
-  const s = $("onboarding-status");
-  const fail = (msg) => { s.textContent = msg; s.classList.add("err"); };
-  s.textContent = ""; s.classList.remove("err");
-
-  const name = $("profileName").value.trim();
-  const email = $("profileEmail").value.trim();
-  if (!name) return fail("이름을 입력해 주세요.");
-  if (!email || !email.includes("@")) return fail("이메일을 정확히 입력해 주세요.");
-  if (!selectedPlan) return fail("플랜을 선택해 주세요.");
-
-  const profileData = {
-    name, email,
-    birthday: $("profileBirthday").value,
-    gender: $("profileGender").value,
-    age: $("profileAge").value,
-    nationality: $("profileNationality").value,
-    lang: $("profileLang").value,
-    purpose: $("profilePurpose").value,
-    plan: selectedPlan,
-  };
-
-  $("start-btn").disabled = true;
-  s.textContent = "로그인 중…"; s.classList.remove("err");
-  try {
-    const account = await login({ email, name, plan: selectedPlan, profile: profileData });
-    const profile = await saveProfile({ ...profileData, onboarded: true });
-    s.textContent = "";
-    await enterApp(profile, account);
-  } catch (e) {
-    fail(e.message || "로그인 실패");
-  } finally {
-    $("start-btn").disabled = false;
-  }
+$("login-btn").addEventListener("click", async () => {
+  const err = $("login-err");
+  err.textContent = "";
+  const name = $("login-name").value.trim();
+  const email = $("login-email").value.trim();
+  if (!name) return (err.textContent = "이름을 입력해 주세요.");
+  if (!email || !email.includes("@")) return (err.textContent = "이메일을 정확히 입력해 주세요.");
+  $("login-btn").disabled = true;
+  try { await doLogin({ email, name, plan: state.loginPlan }); }
+  catch (e) { err.textContent = e.message || "로그인 실패"; }
+  finally { $("login-btn").disabled = false; }
 });
 
-// ---- 플랜 전환 (설정 패널) ----
-async function switchPlan(plan) {
-  try {
-    const account = await changePlan(plan);
-    await saveProfile({ plan });
-    renderAccount(account);
-    setStatus(`플랜을 ${PLAN_LABEL[plan]}(으)로 바꿨어요 ✓`);
-  } catch (e) {
-    setStatus("플랜 변경 실패: " + e.message, true);
-  }
-}
-$("plan-switch-gemini").addEventListener("click", () => switchPlan("gemini"));
-$("plan-switch-openai").addEventListener("click", () => switchPlan("openai"));
-
-// ---- 로그아웃 (토큰·프로필 초기화 → 첫 세션 화면) ----
-$("logout-btn").addEventListener("click", async () => {
-  await clearAuth();
-  await clearProfile();
-  ["profileName", "profileEmail", "profileBirthday", "profileAge"].forEach((id) => { $(id).value = ""; });
-  ["profileGender", "profileNationality", "profilePurpose"].forEach((id) => { $(id).value = ""; });
-  $("profileLang").value = "베트남어";
-  selectedPlan = "";
-  $("plan-gemini").classList.remove("selected");
-  $("plan-openai").classList.remove("selected");
-  $("onboarding-status").textContent = "";
-  openSettings(false);
-  resultEl.hidden = true; resultEl.innerHTML = "";
-  setStatus("");
-  showOnboarding(true);
+$("guest-btn").addEventListener("click", async () => {
+  const err = $("login-err"); err.textContent = "";
+  const email = "guest" + Math.floor(Math.random() * 1e7) + "@wg.local";
+  try { await doLogin({ email, name: "게스트", plan: "gemini" }); }
+  catch (e) { err.textContent = e.message || "연결 실패"; }
 });
 
-// ---- 첫 실행 분기: 온보딩+로그인 완료 여부로 화면 결정 ----
-(async () => {
-  const profile = await getProfile();
-  const account = await getAccount();
-  if (profile.onboarded && account?.token) {
-    await enterApp(profile, account);
-  } else {
-    showOnboarding(true);
-  }
-})();
+// ---------- 앱 진입 ----------
+async function enterApp(account) {
+  state.account = account;
+  showApp();
+  setLoginPlan(account.plan || "gemini");
+  applyI18n();
+  await loadSiteInfo();
+  setTab("home");
+  renderMy();
+}
 
+async function loadSiteInfo() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    let host = "—";
+    try { host = new URL(tab.url).hostname; } catch {}
+    $("site-name").textContent = tab?.title ? tab.title.slice(0, 28) : host;
+    $("site-url").textContent = host;
+  } catch { /* 특수 페이지 */ }
+}
+
+// 상단 로고 = 홈
+$("brand-btn").addEventListener("click", () => setTab("home"));
+document.querySelectorAll(".hd-tab").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+document.querySelectorAll("#app-langs [data-lang], #my-langs [data-lang]").forEach((b) =>
+  b.addEventListener("click", async () => { state.lang = b.dataset.lang; applyI18n(); await saveProfile({ lang: state.lang }); }));
+
+// ---------- 기능 토글 ----------
+function renderToggles() {
+  document.querySelectorAll("[data-feat]").forEach((btn) => {
+    const on = state.toggles[btn.dataset.feat];
+    btn.classList.toggle("on", on);
+    btn.querySelector(".lbl").textContent = on ? "ON" : "OFF";
+  });
+}
+document.querySelectorAll("[data-feat]").forEach((btn) =>
+  btn.addEventListener("click", () => { state.toggles[btn.dataset.feat] = !state.toggles[btn.dataset.feat]; renderToggles(); }));
+
+// ---------- 안내(홈 입력 → 대화) ----------
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
 }
-
-// content script에 메시지 (실패 시 주입 후 재시도)
 async function sendToContent(tabId, message) {
-  try {
-    return await chrome.tabs.sendMessage(tabId, message);
-  } catch {
+  try { return await chrome.tabs.sendMessage(tabId, message); }
+  catch {
     await chrome.scripting.executeScript({ target: { tabId }, files: ["src/content.js"] });
     return await chrome.tabs.sendMessage(tabId, message);
   }
 }
+function setStatus(msg, isErr = false) { $("status").textContent = msg || ""; $("status").classList.toggle("err", isErr); }
 
-function render({ summary, steps, nextLink, warnings }, tabId) {
-  resultEl.hidden = false;
-  resultEl.innerHTML = "";
+$("hero-send").addEventListener("click", runGuide);
+$("hero-input").addEventListener("keydown", (e) => { if (e.key === "Enter") runGuide(); });
 
-  if (summary) {
-    const c = document.createElement("div");
-    c.className = "wg-card";
-    c.innerHTML = `<h3>📄 이 페이지는</h3><div class="wg-summary"></div>`;
-    c.querySelector(".wg-summary").textContent = summary;
-    resultEl.appendChild(c);
-  }
-
-  if (steps?.length) {
-    const c = document.createElement("div");
-    c.className = "wg-card";
-    c.innerHTML = `<h3>🧭 이렇게 하세요</h3>`;
-    const ol = document.createElement("ul");
-    ol.className = "wg-steps";
-    steps.forEach((s, i) => {
-      const li = document.createElement("li");
-      li.innerHTML = `<span class="n">${i + 1}</span>`;
-      li.appendChild(document.createTextNode(s));
-      ol.appendChild(li);
-    });
-    c.appendChild(ol);
-    resultEl.appendChild(c);
-  }
-
-  if (nextLink) {
-    const c = document.createElement("div");
-    c.className = "wg-card wg-next";
-    c.innerHTML = `<h3>✓ 다음에 누를 곳</h3><div class="lk"></div>
-      <button class="hl-btn">페이지에서 찾아주기</button>`;
-    c.querySelector(".lk").textContent = nextLink.text;
-    c.querySelector(".hl-btn").addEventListener("click", async () => {
-      const r = await sendToContent(tabId, { type: "WG_HIGHLIGHT", href: nextLink.href, text: nextLink.text });
-      setStatus(r?.ok ? "페이지에서 초록색으로 표시했어요 ✓" : "그 링크를 페이지에서 못 찾았어요.");
-    });
-    resultEl.appendChild(c);
-  }
-
-  if (warnings?.length) {
-    const c = document.createElement("div");
-    c.className = "wg-card wg-warn";
-    c.innerHTML = `<h3>주의하세요</h3>`;
-    const ul = document.createElement("ul");
-    warnings.forEach((w) => {
-      const li = document.createElement("li");
-      li.textContent = w;
-      ul.appendChild(li);
-    });
-    c.appendChild(ul);
-    resultEl.appendChild(c);
-  }
-}
-
-// ---- 안내받기: 페이지 추출 → 백엔드로 요청 ----
-$("run").addEventListener("click", async () => {
-  const goal = $("goal").value.trim();
-  const lang = $("lang").value;
-  if (!goal) return setStatus("하고 싶은 일을 입력해 주세요.", true);
-
-  const btn = $("run");
-  btn.disabled = true;
+async function runGuide() {
+  const goal = $("hero-input").value.trim();
+  if (!goal) return setStatus("하고 싶은 일을 적어 주세요.", true);
+  state.userGoal = goal;
   setStatus("페이지를 읽는 중…");
-  resultEl.hidden = true;
-
+  setTab("chat");
+  $("tab-chat").innerHTML = `<div class="hd-bub bot">${esc(loadingMsg())}</div>`;
   try {
     const tab = await getActiveTab();
     if (!tab?.id) throw new Error("활성 탭을 찾을 수 없어요.");
-
     const page = await sendToContent(tab.id, { type: "WG_EXTRACT" });
     if (!page) throw new Error("페이지를 읽지 못했어요. 새로고침 후 다시 시도해 주세요.");
-
-    setStatus("AI가 안내를 준비하는 중…");
-    const out = await guide({ goal, lang, pageTitle: page.title, pageText: page.pageText, links: page.links });
-
-    render(out, tab.id);
-    renderAccount(await getAccount());  // 사용량 갱신 반영
+    const out = await guide({ goal, lang: state.lang, pageTitle: page.title, pageText: page.pageText, links: page.links });
+    state.guideResult = { ...out, goal, pageTitle: page.title, tabId: tab.id };
+    renderChat();
+    await saveEntry({ type: "guide", title: goal, at: new Date().toISOString() });
+    renderAccount(await getAccount());
     setStatus(out.mock ? "· 데모(mock) 응답이에요. 서버에 키를 넣으면 실제 AI로 바뀝니다." : "");
   } catch (e) {
-    console.error(e);
-    if (e.code === "quota") {
-      openSettings(true);
-      renderAccount(await getAccount());
-      setStatus(e.message + " (설정에서 유료 플랜으로 전환할 수 있어요)", true);
-    } else if (e.code === "auth") {
-      await clearAuth();
-      showOnboarding(true);
-      setStatus(e.message, true);
-    } else {
-      setStatus("오류: " + e.message, true);
-    }
-  } finally {
-    btn.disabled = false;
+    if (e.code === "quota") { setTab("my"); setStatus(e.message + " (마이페이지에서 유료 플랜으로 전환)", true); renderAccount(await getAccount()); }
+    else if (e.code === "auth") { await clearAuth(); showLogin(); setStatus(e.message, true); }
+    else { $("tab-chat").innerHTML = `<div class="hd-bub bot">${esc("오류: " + e.message)}</div>`; setStatus("오류: " + e.message, true); }
   }
+}
+function loadingMsg() { return { ko: "페이지를 읽고 안내를 준비하고 있어요…", en: "Reading the page and preparing guidance…", zh: "正在读取页面并准备指引…", vi: "Đang đọc trang và chuẩn bị hướng dẫn…" }[LANGS[state.lang]]; }
+
+// ---------- 대화 렌더 ----------
+function renderChat() {
+  const r = state.guideResult;
+  const el = $("tab-chat");
+  el.innerHTML = "";
+  el.appendChild(bubble("user", r.goal));
+  const steps = r.steps || [];
+  if (r.summary) el.appendChild(bubble("bot", r.summary));
+  if (steps.length) el.appendChild(bubble("bot", introMsg(steps.length)));
+  steps.forEach((s, i) => el.appendChild(stepBubble(i + 1, steps.length, s)));
+  if (r.nextLink) el.appendChild(targetCard(r.nextLink, r.tabId));
+  if (r.warnings && r.warnings.length) el.appendChild(warnCard(r.warnings));
+}
+function introMsg(n) { return { ko: `${n}단계로 안내할게요.`, en: `Let me guide you in ${n} steps.`, zh: `我分${n}步为您指引。`, vi: `Tôi hướng dẫn bạn ${n} bước.` }[LANGS[state.lang]]; }
+function bubble(kind, text) { const d = document.createElement("div"); d.className = "hd-bub " + kind; d.textContent = text; return d; }
+function stepBubble(i, n, text) {
+  const d = document.createElement("div"); d.className = "hd-step";
+  const head = document.createElement("div"); head.className = "hd-step-head";
+  head.innerHTML = `<span class="hd-step-badge">${i}</span><span class="hd-step-n">STEP ${i}/${n}</span>`;
+  const t = document.createElement("div"); t.className = "hd-step-txt"; t.textContent = text;
+  d.appendChild(head); d.appendChild(t); return d;
+}
+function targetCard(nextLink, tabId) {
+  const d = document.createElement("div"); d.className = "hd-target";
+  const label = { ko: "화면에서 이 버튼을 누르세요", en: "Press this button on the page", zh: "在页面上点这个按钮", vi: "Nhấn nút này trên trang" }[LANGS[state.lang]];
+  d.innerHTML = `<small>${esc(label)}</small><span class="btnchip">▸ ${esc(nextLink.text)}</span>`;
+  const find = document.createElement("button"); find.className = "hd-linkbtn"; find.style.marginTop = "8px";
+  find.textContent = { ko: "페이지에서 찾아주기", en: "Find it on the page", zh: "在页面中找到", vi: "Tìm trên trang" }[LANGS[state.lang]];
+  find.addEventListener("click", async () => {
+    const res = await sendToContent(tabId, { type: "WG_HIGHLIGHT", href: nextLink.href, text: nextLink.text });
+    setStatus(res?.ok ? "페이지에서 표시했어요 ✓" : "그 링크를 페이지에서 못 찾았어요.");
+  });
+  d.appendChild(find); return d;
+}
+function warnCard(warnings) {
+  const d = document.createElement("div"); d.className = "hd-warn";
+  const head = { ko: "주의하세요", en: "WATCH OUT", zh: "请注意", vi: "CHÚ Ý" }[LANGS[state.lang]];
+  d.innerHTML = `<b>⚠ ${esc(head)}</b>`;
+  const ul = document.createElement("ul");
+  warnings.forEach((w) => { const li = document.createElement("li"); li.textContent = w; ul.appendChild(li); });
+  d.appendChild(ul); return d;
+}
+
+// ---------- 요약 렌더 ----------
+function renderSummary() {
+  const el = $("tab-sum"); const r = state.guideResult;
+  const tag = { ko: "이 페이지 요약", en: "PAGE SUMMARY", zh: "本页摘要", vi: "TÓM TẮT TRANG" }[LANGS[state.lang]];
+  if (!r) {
+    const empty = { ko: "먼저 홈에서 안내를 받아 보세요.", en: "Get guidance from Home first.", zh: "请先在首页获取指引。", vi: "Hãy nhận hướng dẫn ở Trang chủ trước." }[LANGS[state.lang]];
+    el.innerHTML = `<div class="hd-empty">${esc(empty)}</div>`; return;
+  }
+  el.innerHTML = `<div class="hd-sum-tag">${esc(tag)}</div><div class="hd-sum-title"></div><ul class="hd-sum-list"></ul>`;
+  el.querySelector(".hd-sum-title").textContent = r.pageTitle || r.goal;
+  const ul = el.querySelector(".hd-sum-list");
+  const items = [r.summary, ...(r.steps || [])].filter(Boolean);
+  items.forEach((it, i) => { const li = document.createElement("li"); li.innerHTML = `<span class="n">${i + 1}</span><p></p>`; li.querySelector("p").textContent = it; ul.appendChild(li); });
+}
+
+// ---------- 보관함 ----------
+async function getSaved() { const o = await chrome.storage.local.get("wg_saved"); return o.wg_saved || []; }
+async function saveEntry(entry) { const list = await getSaved(); list.unshift(entry); await chrome.storage.local.set({ wg_saved: list.slice(0, 50) }); }
+async function renderSaved() {
+  const el = $("tab-save"); const list = await getSaved();
+  if (!list.length) {
+    const empty = { ko: "저장된 안내가 없어요.", en: "Nothing saved yet.", zh: "还没有收藏。", vi: "Chưa có mục nào." }[LANGS[state.lang]];
+    el.innerHTML = `<div class="hd-empty">${esc(empty)}</div>`; return;
+  }
+  el.innerHTML = "";
+  list.forEach((it) => {
+    const row = document.createElement("div"); row.className = "hd-save-row";
+    const d = new Date(it.at); const date = `${d.getMonth() + 1}/${d.getDate()}`;
+    row.innerHTML = `<div class="ic"><span style="filter:grayscale(1)">${it.type === "guide" ? "🧭" : "📝"}</span></div>
+      <div class="meta"><div class="top"><span class="type mono">${it.type === "guide" ? "GUIDE" : "SUM"}</span><span class="date">${date}</span></div>
+      <div class="title"></div></div><span class="chev">›</span>`;
+    row.querySelector(".title").textContent = it.title;
+    el.appendChild(row);
+  });
+}
+
+// ---------- 마이페이지 ----------
+function renderAccount(account) {
+  if (!account) return;
+  state.account = account;
+  const used = account.usage?.count ?? 0, limit = account.limit ?? "—";
+  $("set-usage").textContent = `${used} / ${limit}`;
+  document.querySelectorAll("#my-plans button").forEach((b) => b.classList.toggle("on", b.dataset.plan === account.plan));
+}
+async function renderMy() {
+  const account = state.account || (await getAccount());
+  const profile = await getProfile();
+  const name = account?.name || profile.name || "게스트";
+  $("my-avatar").textContent = (name[0] || "N").toUpperCase();
+  $("my-name").textContent = name;
+  $("my-sub").textContent = (account?.email || "") + " · " + state.lang;
+  renderAccount(account);
+}
+document.querySelectorAll("#my-plans button").forEach((b) =>
+  b.addEventListener("click", async () => {
+    try { const account = await changePlan(b.dataset.plan); await saveProfile({ plan: b.dataset.plan }); renderAccount(account);
+      setStatus(`플랜을 ${b.dataset.plan === "openai" ? "유료" : "무료"}로 바꿨어요 ✓`); }
+    catch (e) { setStatus("플랜 변경 실패: " + e.message, true); }
+  }));
+
+$("logout-btn").addEventListener("click", async () => {
+  await clearAuth(); await clearProfile();
+  state.account = null; state.guideResult = null;
+  $("login-name").value = ""; $("login-email").value = ""; $("login-err").textContent = "";
+  setStatus("");
+  showLogin();
 });
+
+// ---------- 유틸 ----------
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+// ---------- 부팅 ----------
+(async () => {
+  const profile = await getProfile();
+  if (profile.lang) state.lang = profile.lang;
+  renderToggles();
+  const account = await getAccount();
+  if (profile.onboarded && account?.token) { await enterApp(account); }
+  else { showLogin(); applyI18n(); setLoginPlan("gemini"); }
+})();

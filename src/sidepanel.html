@@ -3,151 +3,202 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>웹 길잡이</title>
+  <title>Hi :D · 길잡이</title>
   <link rel="stylesheet" href="sidepanel.css" />
 </head>
 <body>
-  <header class="wg-head">
-    <div class="wg-head-row">
-      <div class="wg-logo">🧭 웹 길잡이</div>
-      <button id="settings-toggle" class="wg-gear" title="설정">⚙</button>
+
+<!-- ============ 로그인 화면 (authed=false) ============ -->
+<section id="view-login" class="hd-login" hidden>
+  <div class="hd-login-top">
+    <div class="hd-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.5 9.5h.01"></path><path d="M15.5 9.5h.01"></path><path d="M8 14.5a5 5 0 0 0 8 0"></path>
+      </svg>
     </div>
-    <div class="wg-sub">목적을 말하면, 다음 한 걸음을 안내해요</div>
-    <!-- 로그인 상태 바 (온보딩 완료 후에만 표시) -->
-    <div id="profile-bar" class="wg-profile-bar" hidden>
-      <span class="wg-profile-name">👤 <span id="profile-name-label"></span>
-        <span id="profile-plan-label" class="wg-plan-badge"></span></span>
-      <button id="logout-btn" class="wg-link-btn" type="button">로그아웃</button>
+    <div class="hd-wordmark">Hi&nbsp;:D</div>
+    <div class="hd-tagline" id="login-tagline">한국 생활, 쉽게. 제가 한 걸음씩 도와드릴게요.</div>
+  </div>
+
+  <div class="hd-login-bottom">
+    <div class="hd-field-label" id="lbl-lang">언어 / Language</div>
+    <div class="hd-langs" id="login-langs">
+      <button class="hd-chip" data-lang="한국어">한국어</button>
+      <button class="hd-chip" data-lang="영어">English</button>
+      <button class="hd-chip" data-lang="중국어">中文</button>
+      <button class="hd-chip" data-lang="베트남어">Tiếng Việt</button>
+    </div>
+
+    <div class="hd-field-label" id="lbl-name">이름 / Name</div>
+    <input id="login-name" class="hd-input" type="text" placeholder="예: Nguyen" autocomplete="off" />
+
+    <div class="hd-field-label" id="lbl-email">이메일 / Email</div>
+    <input id="login-email" class="hd-input" type="email" placeholder="nguyen@example.com" autocomplete="off" />
+
+    <div class="hd-field-label" id="lbl-plan">플랜 / Plan</div>
+    <div class="hd-plan2" id="login-plans">
+      <button data-plan="gemini"><span class="p-name">무료 · Gemini</span><span class="p-sub">low usage</span></button>
+      <button data-plan="openai"><span class="p-name">유료 · ChatGPT</span><span class="p-sub">high usage</span></button>
+    </div>
+
+    <div id="login-err" class="hd-err"></div>
+    <button id="login-btn" class="hd-btn">로그인</button>
+    <button id="guest-btn" class="hd-btn-ghost">로그인 없이 둘러보기</button>
+  </div>
+</section>
+
+<!-- ============ 앱 (authed=true) ============ -->
+<section id="view-app" class="hd-app" hidden>
+  <!-- 헤더 -->
+  <header class="hd-header">
+    <div class="hd-header-row">
+      <button class="hd-brand" id="brand-btn" title="홈">
+        <span class="mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 9.5h.01"></path><path d="M15.5 9.5h.01"></path><path d="M8 14.5a5 5 0 0 0 8 0"></path>
+          </svg>
+        </span>
+        <span class="wm">Hi&nbsp;:D</span>
+      </button>
+      <div class="hd-langs-sm" id="app-langs">
+        <button data-lang="한국어">한</button>
+        <button data-lang="영어">EN</button>
+        <button data-lang="중국어">中</button>
+        <button data-lang="베트남어">VI</button>
+      </div>
+    </div>
+    <div class="hd-site">
+      <span class="name" id="site-name">현재 사이트</span>
+      <span class="url" id="site-url">—</span>
+      <span class="tag" id="site-tag">현재 사이트</span>
     </div>
   </header>
 
-  <!-- 첫 세션: 프로필(로컬) 설정 화면. onboarded 되면 숨겨지고 #main-app이 보인다. -->
-  <section id="onboarding" class="wg-onboarding" hidden>
-    <div class="wg-onb-title">👋 첫 입장이신가요?</div>
-    <div class="wg-onb-sub">정보를 입력하고 플랜을 선택하면 시작해요.</div>
+  <!-- 콘텐츠 (탭별 교체) -->
+  <div class="hd-content">
+    <!-- 홈 -->
+    <div id="tab-home" class="hd-home">
+      <div class="hd-hero">
+        <h2 id="hero-title">무엇을 도와드릴까요?</h2>
+        <p id="hero-sub">하고 싶은 일을 적어 주세요</p>
+        <div class="hd-hero-row">
+          <input id="hero-input" type="text" placeholder="예: 등본을 발급받고 싶어요" />
+          <button id="hero-send" class="hd-hero-send" title="보내기">➜</button>
+        </div>
+      </div>
 
-    <label class="wg-label">이름 / Name</label>
-    <input id="profileName" class="wg-input" type="text" placeholder="예: 응웬 / Nguyen" autocomplete="off" />
+      <div class="hd-sec-head"><h3 id="feat-title">기능</h3><span id="feat-sub">필요한 것만 켜세요</span></div>
 
-    <label class="wg-label">이메일 / Email</label>
-    <input id="profileEmail" class="wg-input" type="email" placeholder="예: nguyen@example.com" autocomplete="off" />
+      <div class="hd-group">
+        <div class="hd-group-label"><b>SAFETY</b><i></i></div>
+        <div class="hd-card">
+          <div class="hd-feat">
+            <div class="ic"><span class="em">🛡️</span></div>
+            <div class="txt"><b id="f-filter">광고성 글 필터링</b><small id="f-filter-d">광고·피싱 링크를 자동으로 가려요</small></div>
+            <button class="hd-toggle" data-feat="filter"><span class="dot"></span><span class="lbl">ON</span></button>
+          </div>
+        </div>
+      </div>
 
-    <label class="wg-label">생일 / Birthday</label>
-    <input id="profileBirthday" class="wg-input" type="date" />
+      <div class="hd-group">
+        <div class="hd-group-label"><b>UNDERSTAND</b><i></i></div>
+        <div class="hd-card">
+          <div class="hd-feat">
+            <div class="ic"><span class="em">🌐</span></div>
+            <div class="txt"><b id="f-trans">실시간 번역</b><small id="f-trans-d">이 페이지를 모국어로 바꿔요</small></div>
+            <button class="hd-toggle" data-feat="trans"><span class="dot"></span><span class="lbl">ON</span></button>
+          </div>
+          <div class="hd-feat">
+            <div class="ic"><span class="em">📝</span></div>
+            <div class="txt"><b id="f-sum">요약</b><small id="f-sum-d">긴 내용을 핵심만 정리해요</small></div>
+            <button class="hd-toggle" data-feat="sum"><span class="dot"></span><span class="lbl">OFF</span></button>
+          </div>
+        </div>
+      </div>
 
-    <label class="wg-label">성별 / Gender</label>
-    <select id="profileGender" class="wg-select">
-      <option value="">선택해 주세요</option>
-      <option value="남성">남성</option>
-      <option value="여성">여성</option>
-      <option value="기타">기타</option>
-      <option value="응답 안 함">응답 안 함</option>
-    </select>
+      <div class="hd-group">
+        <div class="hd-group-label"><b>HISTORY</b><i></i></div>
+        <div class="hd-card">
+          <div class="hd-feat">
+            <div class="ic"><span class="em">🕙</span></div>
+            <div class="txt"><b id="f-rec">화면 기록</b><small id="f-rec-d">방문한 단계를 저장해 다시 봐요</small></div>
+            <button class="hd-toggle" data-feat="rec"><span class="dot"></span><span class="lbl">OFF</span></button>
+          </div>
+        </div>
+      </div>
 
-    <label class="wg-label">나이 / Age</label>
-    <input id="profileAge" class="wg-input" type="number" min="0" max="120" placeholder="예: 32" />
-
-    <label class="wg-label">국적 / Nationality</label>
-    <select id="profileNationality" class="wg-select">
-      <option value="">선택해 주세요</option>
-      <option value="베트남">🇻🇳 베트남</option>
-      <option value="중국">🇨🇳 중국</option>
-      <option value="필리핀">🇵🇭 필리핀</option>
-      <option value="캄보디아">🇰🇭 캄보디아</option>
-      <option value="태국">🇹🇭 태국</option>
-      <option value="일본">🇯🇵 일본</option>
-      <option value="미국">🇺🇸 미국</option>
-      <option value="한국">🇰🇷 한국</option>
-      <option value="기타">기타</option>
-    </select>
-
-    <label class="wg-label">모국어 / Language</label>
-    <select id="profileLang" class="wg-select">
-      <option value="베트남어">🇻🇳 Tiếng Việt (베트남어)</option>
-      <option value="영어">🇺🇸 English (영어)</option>
-      <option value="중국어">🇨🇳 中文 (중국어)</option>
-      <option value="한국어">🇰🇷 한국어</option>
-    </select>
-
-    <label class="wg-label">사용 목적 / Purpose</label>
-    <select id="profilePurpose" class="wg-select">
-      <option value="">선택해 주세요</option>
-      <option value="행정·민원">행정·민원</option>
-      <option value="의료·건강">의료·건강</option>
-      <option value="교육·자녀">교육·자녀</option>
-      <option value="취업·근로">취업·근로</option>
-      <option value="금융·세금">금융·세금</option>
-      <option value="기타">기타</option>
-    </select>
-
-    <label class="wg-label">플랜 구독 / Plan</label>
-    <div class="wg-plans">
-      <button type="button" class="wg-plan" data-plan="gemini" id="plan-gemini">
-        <span class="wg-plan-tag wg-plan-free">무료</span>
-        <span class="wg-plan-name">Google Gemini</span>
-        <span class="wg-plan-desc">적은 사용량 · 무료로 시작</span>
-      </button>
-      <button type="button" class="wg-plan" data-plan="openai" id="plan-openai">
-        <span class="wg-plan-tag wg-plan-paid">유료</span>
-        <span class="wg-plan-name">ChatGPT (OpenAI)</span>
-        <span class="wg-plan-desc">많은 사용량 · 유료 구독</span>
-      </button>
-    </div>
-    <div class="wg-onb-note">API 키는 넣지 않아도 돼요. 서버가 대신 처리합니다.</div>
-
-    <button id="start-btn" class="wg-btn" type="button">시작하기</button>
-    <div id="onboarding-status" class="wg-status"></div>
-  </section>
-
-  <!-- 메인 앱: 온보딩 완료 후 표시 -->
-  <div id="main-app" hidden>
-
-  <!-- 계정/플랜 패널 (⚙ 로 토글) -->
-  <section id="settings" class="wg-settings" hidden>
-    <label class="wg-label">내 계정 / Account</label>
-    <div class="wg-acct">
-      <div class="wg-acct-row"><span>이메일</span><b id="acct-email">—</b></div>
-      <div class="wg-acct-row"><span>현재 플랜</span><b id="acct-plan">—</b></div>
-      <div class="wg-acct-row"><span>오늘 사용량</span><b id="acct-usage">—</b></div>
+      <div class="hd-banner">
+        <span class="chk">✓</span>
+        <span id="home-safe">이 페이지에서 광고·의심 링크를 가려드려요.</span>
+      </div>
     </div>
 
-    <label class="wg-label">플랜 변경 / Plan</label>
-    <div class="wg-plans">
-      <button type="button" class="wg-plan" id="plan-switch-gemini">
-        <span class="wg-plan-tag wg-plan-free">무료</span>
-        <span class="wg-plan-name">Google Gemini</span>
-        <span class="wg-plan-desc">적은 사용량</span>
-      </button>
-      <button type="button" class="wg-plan" id="plan-switch-openai">
-        <span class="wg-plan-tag wg-plan-paid">유료</span>
-        <span class="wg-plan-name">ChatGPT</span>
-        <span class="wg-plan-desc">많은 사용량</span>
-      </button>
+    <!-- 대화 -->
+    <div id="tab-chat" class="hd-chat" hidden></div>
+
+    <!-- 요약 -->
+    <div id="tab-sum" class="hd-sum" hidden></div>
+
+    <!-- 보관함 -->
+    <div id="tab-save" class="hd-save" hidden></div>
+
+    <!-- 마이페이지 -->
+    <div id="tab-my" class="hd-my" hidden>
+      <div class="hd-prof">
+        <div class="hd-avatar" id="my-avatar">N</div>
+        <div>
+          <div class="pn" id="my-name">—</div>
+          <div class="ps" id="my-sub">—</div>
+        </div>
+      </div>
+
+      <div class="hd-my-label" id="my-lang-label">표시 언어 / Language</div>
+      <div class="hd-langs" id="my-langs">
+        <button class="hd-chip" data-lang="한국어">한국어</button>
+        <button class="hd-chip" data-lang="영어">English</button>
+        <button class="hd-chip" data-lang="중국어">中文</button>
+        <button class="hd-chip" data-lang="베트남어">Tiếng Việt</button>
+      </div>
+
+      <div class="hd-my-label" id="my-plan-label">플랜 / Plan</div>
+      <div class="hd-plan2" id="my-plans">
+        <button data-plan="gemini"><span class="p-name">무료 · Gemini</span><span class="p-sub" id="my-free-usage">low usage</span></button>
+        <button data-plan="openai"><span class="p-name">유료 · ChatGPT</span><span class="p-sub" id="my-paid-usage">high usage</span></button>
+      </div>
+
+      <div class="hd-setcard">
+        <div class="hd-setrow"><span id="set-usage-l">오늘 사용량</span><span class="val" id="set-usage">—</span></div>
+        <div class="hd-setrow"><span id="set-help">도움말</span><span class="val">›</span></div>
+        <div class="hd-setrow"><span id="set-privacy">개인정보</span><span class="val">›</span></div>
+      </div>
+
+      <button id="logout-btn" class="hd-outline" style="margin-top:14px;">로그아웃</button>
     </div>
-    <div id="settings-status" class="wg-status"></div>
-  </section>
+  </div>
 
-  <section class="wg-form">
-    <label class="wg-label">언어 / Language</label>
-    <select id="lang" class="wg-select">
-      <option value="베트남어">🇻🇳 Tiếng Việt (베트남어)</option>
-      <option value="영어">🇺🇸 English (영어)</option>
-      <option value="중국어">🇨🇳 中文 (중국어)</option>
-      <option value="한국어">🇰🇷 한국어</option>
-    </select>
+  <div id="status" class="hd-status"></div>
 
-    <label class="wg-label">무엇을 하고 싶으세요?</label>
-    <textarea id="goal" class="wg-textarea" rows="3"
-      placeholder="예: 자녀 학비 지원을 신청하고 싶어요"></textarea>
+  <!-- 하단 탭바 -->
+  <nav class="hd-tabbar">
+    <button class="hd-tab" data-tab="sum">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v4h4"></path><path d="M9 13h6M9 16h6"></path></svg>
+      <span id="tabl-sum">요약본</span>
+    </button>
+    <button class="hd-tab" data-tab="chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z"></path></svg>
+      <span id="tabl-chat">대화 내용</span>
+    </button>
+    <button class="hd-tab" data-tab="save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v16l-6-3.5L6 20z"></path></svg>
+      <span id="tabl-save">보관함</span>
+    </button>
+    <button class="hd-tab" data-tab="my">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg>
+      <span id="tabl-my">마이페이지</span>
+    </button>
+  </nav>
+</section>
 
-    <button id="run" class="wg-btn">안내받기</button>
-  </section>
-
-  <section id="result" class="wg-result" hidden></section>
-  <div id="status" class="wg-status"></div>
-
-  </div><!-- /#main-app -->
-
-  <script type="module" src="sidepanel.js"></script>
+<script type="module" src="sidepanel.js"></script>
 </body>
 </html>
