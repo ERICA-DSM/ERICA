@@ -1,6 +1,7 @@
 // sidepanel.js — 패널 UI 로직
 import { guide } from "./ai.js";
 import { getSettings, saveSettings, hasApiKey } from "./settings.js";
+import { getHistory, addHistory, clearHistory } from "./history.js";
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status");
@@ -75,7 +76,7 @@ async function sendToContent(tabId, message) {
   try {
     return await chrome.tabs.sendMessage(tabId, message);
   } catch {
-    await chrome.scripting.executeScript({ target: { tabId }, files: ["src/content.js"] });
+    await chrome.scripting.executeScript({ target: { tabId }, files: ["src/lib/classify.js", "src/lib/terms.js", "src/content.js"] });
     return await chrome.tabs.sendMessage(tabId, message);
   }
 }
@@ -136,9 +137,16 @@ function render({ summary, steps, nextLink, warnings }, tabId) {
   }
 }
 
-$("run").addEventListener("click", async () => {
-  const goal = $("goal").value.trim();
-  const lang = $("lang").value;
+// ---------- 안내 실행 (버튼/자동 공용) ----------
+// 마지막 안내에 쓴 목적·언어와, 이미 안내한 URL을 기억해 루프에 활용한다.
+let lastRun = null;        // { goal, lang }
+let lastGuidedUrl = "";    // 중복 자동 안내 방지용
+let busy = false;          // 동시 실행 방지
+
+const autoGuideOn = () => $("autoGuide").checked;
+
+async function runGuide({ goal, lang, auto = false }) {
+  if (busy) return;
   if (!goal) return setStatus("하고 싶은 일을 입력해 주세요.", true);
 
   if (!(await hasApiKey())) {
@@ -148,9 +156,10 @@ $("run").addEventListener("click", async () => {
   }
 
   const btn = $("run");
+  busy = true;
   btn.disabled = true;
-  setStatus("페이지를 읽는 중…");
-  resultEl.hidden = true;
+  setStatus(auto ? "페이지가 바뀌었어요 · 다시 읽는 중…" : "페이지를 읽는 중…");
+  if (!auto) resultEl.hidden = true;
 
   try {
     const tab = await getActiveTab();
@@ -169,11 +178,135 @@ $("run").addEventListener("click", async () => {
     });
 
     render(out, tab.id);
-    setStatus("");
+    lastRun = { goal, lang };
+    lastGuidedUrl = page.url || tab.url || "";
+
+    // 안내 기록 저장(다시보기용)
+    if (out.summary || (out.steps && out.steps.length)) {
+      await addHistory({
+        ts: Date.now(), url: lastGuidedUrl, title: page.title || "", goal, lang,
+        summary: out.summary, steps: out.steps, nextLink: out.nextLink, warnings: out.warnings,
+      });
+    }
+
+    // 추천 링크가 있으면 페이지에서 바로 초록색으로 표시(루프 흐름 매끄럽게)
+    if (out.nextLink) {
+      const r = await sendToContent(tab.id, {
+        type: "WG_HIGHLIGHT", href: out.nextLink.href, text: out.nextLink.text,
+      });
+      setStatus(r?.ok
+        ? "다음에 누를 곳을 페이지에 표시했어요 ✓"
+        : (auto ? "새 페이지를 자동으로 안내했어요 ✓" : ""));
+    } else {
+      setStatus(auto ? "새 페이지를 자동으로 안내했어요 ✓" : "");
+    }
   } catch (e) {
     console.error(e);
     setStatus("오류: " + e.message + "  (⚙ 설정의 API 키/모델을 확인하세요)", true);
   } finally {
+    busy = false;
     btn.disabled = false;
   }
+}
+
+$("run").addEventListener("click", () =>
+  runGuide({ goal: $("goal").value.trim(), lang: $("lang").value })
+);
+
+// ---------- 행정용어 쉬운말 툴팁 토글 ----------
+let termsOn = false;
+$("terms-toggle").addEventListener("click", async () => {
+  const tab = await getActiveTab();
+  if (!tab?.id) return setStatus("활성 탭을 찾을 수 없어요.", true);
+  const btn = $("terms-toggle");
+  try {
+    if (!termsOn) {
+      const r = await sendToContent(tab.id, { type: "WG_TERMS_ON" });
+      termsOn = true;
+      btn.classList.add("on");
+      btn.textContent = "🔤 쉬운 말 끄기";
+      setStatus(r?.count ? `어려운 말 ${r.count}개에 설명을 달았어요 ✓` : "이 페이지에서는 어려운 말을 못 찾았어요.");
+    } else {
+      await sendToContent(tab.id, { type: "WG_TERMS_OFF" });
+      termsOn = false;
+      btn.classList.remove("on");
+      btn.textContent = "🔤 어려운 말 쉽게 보기";
+      setStatus("");
+    }
+  } catch (e) {
+    console.error(e);
+    setStatus("용어 표시 중 오류: " + e.message, true);
+  }
+});
+
+// ---------- 안내 기록 다시보기 ----------
+function fmtTime(ts) {
+  try {
+    const d = new Date(ts);
+    const p = (n) => String(n).padStart(2, "0");
+    return `${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  } catch { return ""; }
+}
+
+async function renderHistoryList() {
+  const list = await getHistory();
+  const box = $("history-list");
+  box.innerHTML = "";
+  if (!list.length) {
+    box.innerHTML = `<div class="wg-history-empty">아직 저장된 안내가 없어요.</div>`;
+    return;
+  }
+  list.forEach((item) => {
+    const el = document.createElement("button");
+    el.className = "wg-history-item";
+    el.innerHTML = `<div class="hi-goal"></div>
+      <div class="hi-meta"><span class="hi-title"></span><span class="hi-time">${fmtTime(item.ts)}</span></div>`;
+    el.querySelector(".hi-goal").textContent = item.goal || "(목적 없음)";
+    el.querySelector(".hi-title").textContent = item.title || item.url || "";
+    el.addEventListener("click", async () => {
+      const tab = await getActiveTab();
+      render(item, tab?.id);
+      setStatus("지난 안내를 다시 불러왔어요.");
+    });
+    box.appendChild(el);
+  });
+}
+
+$("history-toggle").addEventListener("click", async () => {
+  const sec = $("history");
+  const open = sec.hidden;
+  sec.hidden = !open;
+  $("history-toggle").classList.toggle("on", open);
+  if (open) await renderHistoryList();
+});
+
+$("history-clear").addEventListener("click", async () => {
+  await clearHistory();
+  await renderHistoryList();
+  setStatus("기록을 모두 지웠어요.");
+});
+
+// ---------- 루프: 같은 탭이 새 페이지로 이동하면 자동으로 다시 안내 ----------
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (!autoGuideOn() || !lastRun || busy) return;
+  if (changeInfo.status !== "complete") return;          // 로딩 완료 시점만
+  if (!tab?.active) return;                              // 백그라운드 탭 무시
+  const url = tab.url || "";
+  if (!url || url === lastGuidedUrl) return;             // 같은 페이지 재안내 방지
+  if (/^(chrome|edge|about|chrome-extension):/i.test(url)) return; // 내부 페이지 무시
+
+  const active = await getActiveTab();
+  if (!active || active.id !== tabId) return;            // 현재 보고 있는 탭만
+
+  lastGuidedUrl = url; // 중복 트리거 즉시 차단
+
+  // 새 페이지에는 용어 주석이 없으므로 토글 UI를 원상복귀
+  if (termsOn) {
+    termsOn = false;
+    const tb = $("terms-toggle");
+    tb.classList.remove("on");
+    tb.textContent = "🔤 어려운 말 쉽게 보기";
+  }
+
+  runGuide({ goal: lastRun.goal, lang: lastRun.lang, auto: true });
 });
