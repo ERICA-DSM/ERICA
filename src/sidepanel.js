@@ -36,6 +36,7 @@ const T = {
   "f-sum-d": { ko: "긴 내용을 핵심만 정리해요", en: "Sums up long content", zh: "把长内容归纳要点", vi: "Rút gọn nội dung dài" },
   "f-rec": { ko: "화면 기록", en: "History", zh: "记录", vi: "Lịch sử" },
   "f-rec-d": { ko: "방문한 단계를 저장해 다시 봐요", en: "Saves your steps to revisit", zh: "保存步骤以便回看", vi: "Lưu các bước để xem lại" },
+  "tabl-home": { ko: "홈", en: "Home", zh: "主页", vi: "Trang chủ" },
   "tabl-sum": { ko: "요약본", en: "Summary", zh: "摘要", vi: "Tóm tắt" },
   "tabl-chat": { ko: "대화 내용", en: "Chat", zh: "对话", vi: "Trò chuyện" },
   "tabl-save": { ko: "보관함", en: "Saved", zh: "收藏", vi: "Đã lưu" },
@@ -70,17 +71,82 @@ function setTab(tab) {
   state.tab = tab;
   TABS.forEach((t) => { const el = $("tab-" + t); if (el) el.hidden = t !== tab; });
   document.querySelectorAll(".hd-tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
-  if (tab === "chat") renderChatOrEmpty();
+  if (tab === "chat") renderChatPage();
   if (tab === "sum") renderSummary();
   if (tab === "save") renderSaved();
   if (tab === "my") renderMy();
 }
 
-// 대화 탭: 저장된 대화가 있으면 렌더, 없으면 빈 상태 문구
-function renderChatOrEmpty() {
-  if (state.guideResult) { renderChat(); return; }
-  const msg = { ko: "저장된 대화 내용이 없어요.", en: "No saved conversation yet.", zh: "还没有对话记录。", vi: "Chưa có hội thoại nào." }[LANGS[state.lang]];
-  $("tab-chat").innerHTML = `<div class="hd-empty">${esc(msg)}</div>`;
+// ---------- 대화 페이지 (안전배너 + 본문 + 입력행) ----------
+function tLang(o) { return o[LANGS[state.lang]] || o.ko; }
+const SUGGESTIONS = [
+  { ko: "등본·서류 발급받기", en: "Get a document or certificate", zh: "开具证明或文件", vi: "Xin giấy tờ / chứng nhận" },
+  { ko: "이 페이지 번역하기", en: "Translate this page", zh: "翻译此页面", vi: "Dịch trang này" },
+  { ko: "이 페이지 요약하기", en: "Summarize this page", zh: "总结此页面", vi: "Tóm tắt trang này" },
+];
+const CHAT_TXT = {
+  safety: { ko: "이 페이지에서 광고·의심 링크를 가려드려요.", en: "I hide ad / suspicious links on this page.", zh: "我会在此页隐藏广告和可疑链接。", vi: "Tôi ẩn liên kết quảng cáo/đáng ngờ trên trang này." },
+  sub: { ko: "아래에서 고르거나, 하고 싶은 일을 직접 적어 주세요.", en: "Pick one below, or type what you want to do.", zh: "在下方选择，或输入您想做的事。", vi: "Chọn bên dưới, hoặc nhập việc bạn muốn làm." },
+  ph: { ko: "예: 등본 떼고 싶어요", en: "e.g. I need a certificate", zh: "例：我要开证明", vi: "vd: Tôi cần giấy tờ" },
+};
+
+function renderChatPage() {
+  const el = $("tab-chat");
+  el.innerHTML = "";
+
+  const safety = document.createElement("div");
+  safety.className = "hd-chat-safety";
+  safety.innerHTML = `<span class="chk">✓</span><span class="txt"></span>`;
+  safety.querySelector(".txt").textContent = tLang(CHAT_TXT.safety);
+  el.appendChild(safety);
+
+  const body = document.createElement("div");
+  body.className = "hd-chat-body";
+  if (state.guideResult) buildChatMessages(body);
+  else buildChatEmpty(body);
+  el.appendChild(body);
+
+  const row = document.createElement("div");
+  row.className = "hd-chat-input";
+  const input = document.createElement("input");
+  input.type = "text"; input.placeholder = tLang(CHAT_TXT.ph);
+  const send = document.createElement("button");
+  send.className = "send"; send.textContent = "➜";
+  const go = () => { const v = input.value.trim(); if (v) runGuide(v); };
+  send.addEventListener("click", go);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  row.appendChild(input); row.appendChild(send);
+  el.appendChild(row);
+}
+
+function buildChatEmpty(body) {
+  const title = document.createElement("div");
+  title.className = "hd-chat-empty-title"; title.textContent = tr("hero-title");
+  const sub = document.createElement("div");
+  sub.className = "hd-chat-empty-sub"; sub.textContent = tLang(CHAT_TXT.sub);
+  body.appendChild(title); body.appendChild(sub);
+  const list = document.createElement("div");
+  list.className = "hd-suggest-list";
+  SUGGESTIONS.forEach((s) => {
+    const b = document.createElement("button");
+    b.className = "hd-suggest";
+    b.innerHTML = `<span class="plus">+</span><span class="lbl"></span>`;
+    b.querySelector(".lbl").textContent = tLang(s);
+    b.addEventListener("click", () => runGuide(tLang(s)));
+    list.appendChild(b);
+  });
+  body.appendChild(list);
+}
+
+function buildChatMessages(body) {
+  const r = state.guideResult;
+  body.appendChild(bubble("user", r.goal));
+  if (r.summary) body.appendChild(bubble("bot", r.summary));
+  const steps = r.steps || [];
+  if (steps.length) body.appendChild(bubble("bot", introMsg(steps.length)));
+  steps.forEach((s, i) => body.appendChild(stepBubble(i + 1, steps.length, s)));
+  if (r.nextLink) body.appendChild(targetCard(r.nextLink, r.tabId));
+  if (r.warnings && r.warnings.length) body.appendChild(warnCard(r.warnings));
 }
 
 // ---------- 로그인 ----------
@@ -148,8 +214,22 @@ try {
 // 상단 로고 = 홈
 $("brand-btn").addEventListener("click", () => setTab("home"));
 document.querySelectorAll(".hd-tab").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+// 언어 변경 → 정적 문자열 + 현재 탭의 동적 콘텐츠까지 즉시 갱신(저장은 대기 없이 백그라운드)
+function changeLang(lang) {
+  if (!lang || lang === state.lang) return;
+  state.lang = lang;
+  applyI18n();
+  rerenderCurrentTab();
+  saveProfile({ lang }); // fire-and-forget → UI 즉시 반영
+}
+function rerenderCurrentTab() {
+  if (state.tab === "chat") renderChatPage();
+  else if (state.tab === "sum") renderSummary();
+  else if (state.tab === "save") renderSaved();
+  else if (state.tab === "my") renderMy();
+}
 document.querySelectorAll("#app-langs [data-lang], #my-langs [data-lang]").forEach((b) =>
-  b.addEventListener("click", async () => { state.lang = b.dataset.lang; applyI18n(); await saveProfile({ lang: state.lang }); }));
+  b.addEventListener("click", () => changeLang(b.dataset.lang)));
 
 // ---------- 기능 토글 ----------
 function renderToggles() {
@@ -176,16 +256,17 @@ async function sendToContent(tabId, message) {
 }
 function setStatus(msg, isErr = false) { $("status").textContent = msg || ""; $("status").classList.toggle("err", isErr); }
 
-$("hero-send").addEventListener("click", runGuide);
-$("hero-input").addEventListener("keydown", (e) => { if (e.key === "Enter") runGuide(); });
+$("hero-send").addEventListener("click", () => runGuide($("hero-input").value));
+$("hero-input").addEventListener("keydown", (e) => { if (e.key === "Enter") runGuide($("hero-input").value); });
 
-async function runGuide() {
-  const goal = $("hero-input").value.trim();
+async function runGuide(goalText) {
+  const goal = String(goalText != null ? goalText : "").trim();
   if (!goal) return setStatus("하고 싶은 일을 적어 주세요.", true);
   state.userGoal = goal;
   setStatus("페이지를 읽는 중…");
   setTab("chat");
-  $("tab-chat").innerHTML = `<div class="hd-bub bot">${esc(loadingMsg())}</div>`;
+  const body = $("tab-chat").querySelector(".hd-chat-body");
+  if (body) body.innerHTML = `<div class="hd-bub bot">${esc(loadingMsg())}</div>`;
   try {
     const tab = await getActiveTab();
     if (!tab?.id) throw new Error("활성 탭을 찾을 수 없어요.");
@@ -193,31 +274,22 @@ async function runGuide() {
     if (!page) throw new Error("페이지를 읽지 못했어요. 새로고침 후 다시 시도해 주세요.");
     const out = await guide({ goal, lang: state.lang, pageTitle: page.title, pageText: page.pageText, links: page.links });
     state.guideResult = { ...out, goal, pageTitle: page.title, tabId: tab.id };
-    renderChat();
+    renderChatPage();
     await saveEntry({ type: "guide", title: goal, at: new Date().toISOString() });
     renderAccount(await getAccount());
     setStatus(out.mock ? "· 데모(mock) 응답이에요. 서버에 키를 넣으면 실제 AI로 바뀝니다." : "");
   } catch (e) {
     if (e.code === "quota") { setTab("my"); setStatus(e.message + " (마이페이지에서 유료 플랜으로 전환)", true); renderAccount(await getAccount()); }
     else if (e.code === "auth") { await clearAuth(); showLogin(); setStatus(e.message, true); }
-    else { $("tab-chat").innerHTML = `<div class="hd-bub bot">${esc("오류: " + e.message)}</div>`; setStatus("오류: " + e.message, true); }
+    else {
+      const b = $("tab-chat").querySelector(".hd-chat-body");
+      if (b) b.innerHTML = `<div class="hd-bub bot">${esc("오류: " + e.message)}</div>`;
+      setStatus("오류: " + e.message, true);
+    }
   }
 }
 function loadingMsg() { return { ko: "페이지를 읽고 안내를 준비하고 있어요…", en: "Reading the page and preparing guidance…", zh: "正在读取页面并准备指引…", vi: "Đang đọc trang và chuẩn bị hướng dẫn…" }[LANGS[state.lang]]; }
 
-// ---------- 대화 렌더 ----------
-function renderChat() {
-  const r = state.guideResult;
-  const el = $("tab-chat");
-  el.innerHTML = "";
-  el.appendChild(bubble("user", r.goal));
-  const steps = r.steps || [];
-  if (r.summary) el.appendChild(bubble("bot", r.summary));
-  if (steps.length) el.appendChild(bubble("bot", introMsg(steps.length)));
-  steps.forEach((s, i) => el.appendChild(stepBubble(i + 1, steps.length, s)));
-  if (r.nextLink) el.appendChild(targetCard(r.nextLink, r.tabId));
-  if (r.warnings && r.warnings.length) el.appendChild(warnCard(r.warnings));
-}
 function introMsg(n) { return { ko: `${n}단계로 안내할게요.`, en: `Let me guide you in ${n} steps.`, zh: `我分${n}步为您指引。`, vi: `Tôi hướng dẫn bạn ${n} bước.` }[LANGS[state.lang]]; }
 function bubble(kind, text) { const d = document.createElement("div"); d.className = "hd-bub " + kind; d.textContent = text; return d; }
 function stepBubble(i, n, text) {

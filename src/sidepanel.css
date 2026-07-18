@@ -145,6 +145,27 @@ button{ font-family:inherit; cursor:pointer; }
 .hd-linkbtn{ background:none; border:none; color:var(--ink); font-size:12px; font-weight:600;
   text-decoration:underline; padding:2px; align-self:flex-start; }
 
+/* 대화 페이지: 안전 배너 / 본문 / 제안 / 입력행 */
+.hd-chat-safety{ display:flex; align-items:center; gap:8px; background:var(--bg-1); border:1px solid var(--line-3);
+  border-radius:10px; padding:9px 12px; }
+.hd-chat-safety .chk{ width:18px; height:18px; flex:none; border:1.5px solid var(--ink); border-radius:5px;
+  display:flex; align-items:center; justify-content:center; font-size:11px; }
+.hd-chat-safety .txt{ font-size:12.5px; color:var(--ink-3); }
+.hd-chat-body{ display:flex; flex-direction:column; gap:10px; }
+.hd-chat-empty-title{ font-size:16.5px; font-weight:600; padding:6px 2px 0; }
+.hd-chat-empty-sub{ font-size:13px; color:var(--mut); line-height:1.5; padding:0 2px; }
+.hd-suggest-list{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+.hd-suggest{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:14px;
+  border:1px solid var(--line); background:#fff; border-radius:12px; font-size:13.5px; font-weight:500;
+  color:var(--ink); font-family:inherit; }
+.hd-suggest:hover{ border-color:var(--ink); }
+.hd-suggest .plus{ font-size:15px; color:var(--mut-3); }
+.hd-chat-input{ position:relative; margin-top:4px; }
+.hd-chat-input input{ width:100%; height:46px; border:1px solid var(--line); border-radius:12px;
+  padding:0 50px 0 14px; font-size:13.5px; font-family:inherit; color:var(--ink); outline:none; }
+.hd-chat-input .send{ position:absolute; right:6px; top:6px; width:34px; height:34px; background:var(--ink);
+  color:#fff; border:none; border-radius:9px; font-size:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
 /* ============ 요약 ============ */
 .hd-sum{ padding:18px 16px 24px; }
 .hd-sum-tag{ font-family:var(--mono); font-size:11px; color:var(--mut-3); letter-spacing:.08em; }
