@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "다문화 웹 길잡이 (Web Guide)",
+  "name": "다문화 웹 길잡이",
   "version": "0.1.0",
   "description": "한국어 웹사이트에서 목적을 입력하면 다음에 눌러야 할 곳을 모국어로 안내하고 광고·피싱을 걸러주는 AI 길잡이.",
   "permissions": ["activeTab", "scripting", "sidePanel", "storage", "tabs"],
@@ -10,7 +10,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "웹 길잡이 열기 (Alt+Q)"
+    "default_title": "다문화 웹 길잡이 · Ask me! (Alt+Q)"
   },
   "side_panel": {
     "default_path": "src/sidepanel.html"
