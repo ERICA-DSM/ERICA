@@ -70,9 +70,17 @@ function setTab(tab) {
   state.tab = tab;
   TABS.forEach((t) => { const el = $("tab-" + t); if (el) el.hidden = t !== tab; });
   document.querySelectorAll(".hd-tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
+  if (tab === "chat") renderChatOrEmpty();
   if (tab === "sum") renderSummary();
   if (tab === "save") renderSaved();
   if (tab === "my") renderMy();
+}
+
+// 대화 탭: 저장된 대화가 있으면 렌더, 없으면 빈 상태 문구
+function renderChatOrEmpty() {
+  if (state.guideResult) { renderChat(); return; }
+  const msg = { ko: "저장된 대화 내용이 없어요.", en: "No saved conversation yet.", zh: "还没有对话记录。", vi: "Chưa có hội thoại nào." }[LANGS[state.lang]];
+  $("tab-chat").innerHTML = `<div class="hd-empty">${esc(msg)}</div>`;
 }
 
 // ---------- 로그인 ----------
@@ -123,12 +131,19 @@ async function enterApp(account) {
 async function loadSiteInfo() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    let host = "—";
+    if (!tab) return;
+    let host = "";
     try { host = new URL(tab.url).hostname; } catch {}
-    $("site-name").textContent = tab?.title ? tab.title.slice(0, 28) : host;
-    $("site-url").textContent = host;
+    $("site-name").textContent = tab.title || host || "현재 사이트";
+    $("site-url").textContent = host || (tab.url || "").slice(0, 40) || "—";
   } catch { /* 특수 페이지 */ }
 }
+
+// 사용자가 탭을 바꾸거나 페이지를 이동하면 현재 사이트 카드를 따라가게 갱신
+try {
+  chrome.tabs.onActivated?.addListener(() => loadSiteInfo());
+  chrome.tabs.onUpdated?.addListener((_id, info, tab) => { if (tab?.active && (info.title || info.url || info.status === "complete")) loadSiteInfo(); });
+} catch { /* 리스너 미지원 환경 */ }
 
 // 상단 로고 = 홈
 $("brand-btn").addEventListener("click", () => setTab("home"));
