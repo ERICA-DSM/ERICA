@@ -158,6 +158,34 @@ button{ font-family:inherit; cursor:pointer; }
 .hd-bullets p{ font-size:13px; line-height:1.5; color:var(--ink-2); }
 /* 보관함 캡처 썸네일 */
 .hd-save-row .thumb{ width:38px; height:38px; border-radius:8px; object-fit:cover; border:1px solid var(--line-2); flex:none; }
+.hd-save-row.clickable{ cursor:pointer; }
+.hd-save-row.clickable:hover{ background:var(--bg-1); border-radius:8px; }
+
+/* 보관함 카테고리 아코디언 */
+.hd-save-cat{ margin-bottom:6px; }
+.hd-save-cathead{ display:flex; align-items:center; justify-content:space-between; width:100%;
+  background:none; border:none; padding:12px 2px; font-family:inherit; color:var(--ink); }
+.hd-save-cathead .ct{ display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; }
+.hd-save-cathead .ct .em{ filter:grayscale(1); }
+.hd-save-cathead .cnt{ font-family:var(--mono); font-size:10.5px; color:var(--mut-3);
+  background:var(--bg-3); border-radius:5px; padding:1px 6px; margin-left:2px; }
+.hd-save-cathead .chev{ color:var(--mut-4); font-size:17px; transition:transform .15s ease; }
+.hd-save-cathead .chev.open{ transform:rotate(90deg); }
+.hd-save-catbody{ padding-left:2px; }
+
+/* 이미지 크게 보기 모달 */
+.hd-modal{ position:fixed; inset:0; background:rgba(10,10,10,.72); z-index:2147483600;
+  display:flex; align-items:center; justify-content:center; padding:20px; }
+.hd-modal-inner{ position:relative; max-width:100%; max-height:100%; }
+.hd-modal-inner img{ max-width:100%; max-height:80vh; border-radius:10px; display:block;
+  border:1px solid rgba(255,255,255,.2); }
+.hd-modal-close{ position:absolute; top:-14px; right:-6px; width:30px; height:30px; border-radius:50%;
+  background:#fff; color:var(--ink); border:none; font-size:18px; line-height:1; cursor:pointer; }
+
+/* 마이페이지 6번째: 무지개(직접 선택) */
+.hd-color-custom{ background:conic-gradient(from 90deg, #ff004c, #ff9a00, #ffe600, #14d100, #00c2ff, #4b3bff, #c000ff, #ff004c) !important; }
+.hd-color-custom::-webkit-color-swatch-wrapper{ padding:0; }
+.hd-color-custom::-webkit-color-swatch{ border:none; background:transparent; border-radius:50%; }
 .hd-warn{ align-self:flex-start; max-width:90%; background:#fff; border:1px solid var(--line-2);
   border-radius:12px; padding:10px 12px; }
 .hd-warn b{ font-size:11px; color:var(--mut); font-family:var(--mono); letter-spacing:.04em; }
@@ -226,6 +254,21 @@ button{ font-family:inherit; cursor:pointer; }
   border-bottom:1px solid var(--line-4); font-size:14px; }
 .hd-setrow:last-child{ border-bottom:none; }
 .hd-setrow .val{ color:var(--mut-2); font-size:12.5px; }
+.hd-setrow.clickable{ cursor:pointer; }
+.hd-setrow.clickable:hover{ background:var(--bg-1); }
+
+/* 도움말/개인정보 정보 모달 */
+.hd-infomodal{ width:300px; max-width:90vw; background:#fff; border-radius:14px; padding:18px 16px 16px; }
+.hd-info-title{ font-size:15px; font-weight:700; margin-bottom:10px; }
+.hd-info-body{ display:flex; flex-direction:column; gap:8px; }
+.hd-info-body p{ font-size:12.5px; line-height:1.55; color:var(--ink-2); }
+.hd-info-row{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+  font-size:13px; padding:6px 0; border-bottom:1px solid var(--line-4); }
+.hd-info-row:last-of-type{ border-bottom:none; }
+.hd-info-row span{ color:var(--mut); }
+.hd-info-row b{ font-weight:600; color:var(--ink); word-break:break-all; text-align:right; }
+.hd-info-note{ font-size:11px !important; color:var(--mut-3) !important; margin-top:4px; }
+.hd-infomodal .hd-modal-close{ top:10px; right:10px; box-shadow:0 1px 4px rgba(0,0,0,.15); }
 .hd-status{ font-size:12px; color:var(--mut); text-align:center; padding:8px 16px; }
 .hd-status.err{ color:#c0392b; }
 

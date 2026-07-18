@@ -52,7 +52,7 @@ const T = {
 };
 const PH = {
   "login-name": { ko: "예: Nguyen", en: "e.g. Nguyen", zh: "例：Nguyen", vi: "vd: Nguyen" },
-  "hero-input": { ko: "", en: "", zh: "", vi: "" },
+  "hero-input": { ko: "Ask me anything!", en: "Ask me anything!", zh: "Ask me anything!", vi: "Ask me anything!" },
 };
 function tr(key) { const c = LANGS[state.lang]; return (T[key] && T[key][c]) || (T[key] && T[key].ko) || ""; }
 function applyI18n() {
@@ -443,6 +443,14 @@ function renderSummary() {
 // ---------- 보관함 ----------
 async function getSaved() { const o = await chrome.storage.local.get("wg_saved"); return o.wg_saved || []; }
 async function saveEntry(entry) { const list = await getSaved(); list.unshift(entry); await chrome.storage.local.set({ wg_saved: list.slice(0, 50) }); }
+// 보관함 카테고리 정의 + 접힘 상태
+const SAVE_CATS = [
+  { type: "guide", chip: "GUIDE", em: "🧭", label: { ko: "길안내", en: "Guides", zh: "指引", vi: "Hướng dẫn" } },
+  { type: "summary", chip: "SUM", em: "📝", label: { ko: "요약", en: "Summaries", zh: "摘要", vi: "Tóm tắt" } },
+  { type: "capture", chip: "SHOT", em: "📸", label: { ko: "캡처", en: "Captures", zh: "截图", vi: "Ảnh chụp" } },
+];
+const savedCollapsed = {};
+
 async function renderSaved() {
   const el = $("tab-save"); const list = await getSaved();
   if (!list.length) {
@@ -450,21 +458,126 @@ async function renderSaved() {
     el.innerHTML = `<div class="hd-empty">${esc(empty)}</div>`; return;
   }
   el.innerHTML = "";
-  const TYPE = { guide: { chip: "GUIDE", em: "🧭" }, summary: { chip: "SUM", em: "📝" }, capture: { chip: "SHOT", em: "📸" } };
-  list.forEach((it) => {
-    const meta = TYPE[it.type] || TYPE.guide;
-    const row = document.createElement("div"); row.className = "hd-save-row";
-    const d = new Date(it.at); const date = `${d.getMonth() + 1}/${d.getDate()}`;
-    const icon = (it.type === "capture" && it.thumb)
-      ? `<img class="thumb" src="${esc(it.thumb)}" alt="">`
-      : `<div class="ic"><span style="filter:grayscale(1)">${meta.em}</span></div>`;
-    row.innerHTML = `${icon}
-      <div class="meta"><div class="top"><span class="type mono">${meta.chip}</span><span class="date">${date}</span></div>
-      <div class="title"></div></div><span class="chev">›</span>`;
-    row.querySelector(".title").textContent = it.title;
-    el.appendChild(row);
+  SAVE_CATS.forEach((cat) => {
+    const items = list.filter((it) => it.type === cat.type);
+    if (!items.length) return;
+    const collapsed = !!savedCollapsed[cat.type];
+
+    const section = document.createElement("div"); section.className = "hd-save-cat";
+    const head = document.createElement("button"); head.className = "hd-save-cathead";
+    head.innerHTML = `<span class="ct"><span class="em">${cat.em}</span>${esc(tLang(cat.label))}<span class="cnt">${items.length}</span></span><span class="chev${collapsed ? "" : " open"}">›</span>`;
+    head.addEventListener("click", () => { savedCollapsed[cat.type] = !savedCollapsed[cat.type]; renderSaved(); });
+    section.appendChild(head);
+
+    const catBody = document.createElement("div"); catBody.className = "hd-save-catbody"; catBody.hidden = collapsed;
+    items.forEach((it) => catBody.appendChild(savedRow(it, cat)));
+    section.appendChild(catBody);
+    el.appendChild(section);
   });
 }
+
+function savedRow(it, cat) {
+  const row = document.createElement("div"); row.className = "hd-save-row";
+  const d = new Date(it.at); const date = `${d.getMonth() + 1}/${d.getDate()}`;
+  const isShot = it.type === "capture" && it.thumb;
+  const icon = isShot
+    ? `<img class="thumb" src="${esc(it.thumb)}" alt="">`
+    : `<div class="ic"><span style="filter:grayscale(1)">${cat.em}</span></div>`;
+  row.innerHTML = `${icon}
+    <div class="meta"><div class="top"><span class="type mono">${cat.chip}</span><span class="date">${date}</span></div>
+    <div class="title"></div></div><span class="chev">›</span>`;
+  row.querySelector(".title").textContent = it.title;
+  if (isShot) {
+    row.classList.add("clickable");
+    row.addEventListener("click", () => openImageModal(it.thumb, it.title));
+  }
+  return row;
+}
+
+// 캡처 이미지 크게 보기(모달)
+function openImageModal(src, title) {
+  const m = document.createElement("div"); m.className = "hd-modal";
+  const inner = document.createElement("div"); inner.className = "hd-modal-inner";
+  const img = document.createElement("img"); img.src = src; img.alt = title || "";
+  const close = document.createElement("button"); close.className = "hd-modal-close"; close.textContent = "×";
+  inner.appendChild(close); inner.appendChild(img);
+  m.appendChild(inner);
+  m.addEventListener("click", (e) => { if (e.target === m || e.target === close) m.remove(); });
+  document.body.appendChild(m);
+}
+
+// 텍스트 정보 모달(도움말/개인정보 공용)
+function openInfoModal(title, bodyEl) {
+  const m = document.createElement("div"); m.className = "hd-modal";
+  const inner = document.createElement("div"); inner.className = "hd-modal-inner hd-infomodal";
+  const close = document.createElement("button"); close.className = "hd-modal-close"; close.textContent = "×";
+  const h = document.createElement("div"); h.className = "hd-info-title"; h.textContent = title;
+  inner.appendChild(close); inner.appendChild(h); inner.appendChild(bodyEl);
+  m.appendChild(inner);
+  m.addEventListener("click", (e) => { if (e.target === m || e.target === close) m.remove(); });
+  document.body.appendChild(m);
+}
+
+const HELP_TXT = {
+  ko: [
+    "‘Ask me!’(다문화 웹 길잡이)는 한국의 행정·생활 웹사이트를 돕는 AI 안내 도우미예요.",
+    "하고 싶은 일을 적으면, 지금 화면에서 다음에 눌러야 할 곳을 모국어로 단계별 안내해요.",
+    "광고·피싱 링크는 가려주고, 현재 화면을 요약하거나 캡처해 보관함에 저장할 수 있어요.",
+    "무료(Gemini)·유료(ChatGPT) 플랜 중 골라 쓸 수 있습니다.",
+  ],
+  en: [
+    "‘Ask me!’ is an AI guide for Korean government & everyday websites.",
+    "Type what you want to do, and it guides you step by step in your language.",
+    "It hides ad/phishing links, and can summarize or capture the current screen.",
+    "Choose between the free (Gemini) and paid (ChatGPT) plans.",
+  ],
+  zh: [
+    "‘Ask me!’ 是帮助您使用韩国政务与生活网站的 AI 向导。",
+    "输入您想做的事，它会用您的语言一步步指引下一步该点哪里。",
+    "它会遮盖广告/钓鱼链接，并能摘要或截图当前页面保存到收藏。",
+    "可在免费(Gemini)与付费(ChatGPT)套餐中选择。",
+  ],
+  vi: [
+    "‘Ask me!’ là trợ lý AI cho các trang hành chính & đời sống ở Hàn Quốc.",
+    "Nhập việc bạn muốn làm, nó hướng dẫn từng bước bằng tiếng của bạn.",
+    "Nó che link quảng cáo/lừa đảo, tóm tắt hoặc chụp màn hình để lưu.",
+    "Chọn giữa gói miễn phí (Gemini) và trả phí (ChatGPT).",
+  ],
+};
+
+function openHelp() {
+  const lines = HELP_TXT[LANGS[state.lang]] || HELP_TXT.ko;
+  const body = document.createElement("div"); body.className = "hd-info-body";
+  lines.forEach((l) => { const p = document.createElement("p"); p.textContent = l; body.appendChild(p); });
+  openInfoModal(tr("set-help"), body);
+}
+
+async function openPrivacy() {
+  const account = state.account || (await getAccount());
+  const profile = await getProfile();
+  const planLabel = ((account?.plan || profile.plan) === "openai") ? "유료 (ChatGPT)" : "무료 (Gemini)";
+  const rows = [
+    { label: { ko: "이름", en: "Name", zh: "姓名", vi: "Tên" }, value: profile.name || account?.name || "—" },
+    { label: { ko: "이메일", en: "Email", zh: "邮箱", vi: "Email" }, value: account?.email || profile.email || "—" },
+    { label: { ko: "모국어", en: "Language", zh: "语言", vi: "Ngôn ngữ" }, value: profile.lang || "—" },
+    { label: { ko: "플랜", en: "Plan", zh: "套餐", vi: "Gói" }, value: planLabel },
+  ];
+  const body = document.createElement("div"); body.className = "hd-info-body";
+  rows.forEach((r) => {
+    const d = document.createElement("div"); d.className = "hd-info-row";
+    d.innerHTML = `<span></span><b></b>`;
+    d.querySelector("span").textContent = tLang(r.label);
+    d.querySelector("b").textContent = r.value;
+    body.appendChild(d);
+  });
+  const note = document.createElement("p"); note.className = "hd-info-note";
+  note.textContent = { ko: "이 정보는 로그인 시 입력한 값이며, 이 기기에만 저장됩니다.", en: "What you entered at login, stored only on this device.", zh: "登录时输入的信息，仅存于本设备。", vi: "Thông tin bạn nhập khi đăng nhập, chỉ lưu trên thiết bị này." }[LANGS[state.lang]];
+  body.appendChild(note);
+  openInfoModal(tr("set-privacy"), body);
+}
+
+$("row-help")?.addEventListener("click", openHelp);
+$("row-privacy")?.addEventListener("click", openPrivacy);
 
 // ---------- 마이페이지 ----------
 function renderAccount(account) {
