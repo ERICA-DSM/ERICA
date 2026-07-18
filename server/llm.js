@@ -105,7 +105,7 @@ export async function guide(payload, plan, env) {
   const raw =
     plan === "openai"
       ? await callOpenAI(system, user, { apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || "gpt-4o-mini" })
-      : await callGemini(system, user, { apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || "gemini-2.0-flash" });
+      : await callGemini(system, user, { apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || "gemini-2.5-flash" });
 
   const parsed = safeParseJson(raw);
   return {
