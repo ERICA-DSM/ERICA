@@ -29,7 +29,7 @@ const T = {
   "feat-title": { ko: "기능", en: "Features", zh: "功能", vi: "Tính năng" },
   "feat-sub": { ko: "필요한 기능을 눌러 쓰세요", en: "Tap a feature to use it", zh: "点按需要的功能", vi: "Chạm để dùng tính năng" },
   "f-filter": { ko: "광고성 글 필터링", en: "Ad filtering", zh: "广告过滤", vi: "Lọc quảng cáo" },
-  "f-filter-d": { ko: "광고를 박스로 가리고 \"광고·AD\"로 표시해요", en: "Covers ads with a box labeled \"AD\"", zh: "用方框遮盖广告并标注\"广告\"", vi: "Che quảng cáo bằng ô \"AD\"" },
+  "f-filter-d": { ko: "광고를 박스로 가리고 광고·AD로 표시해요", en: "Covers ads with a box labeled AD", zh: "用方框遮盖广告并标注广告", vi: "Che quảng cáo bằng ô AD" },
   "f-sum": { ko: "요약", en: "Summary", zh: "摘要", vi: "Tóm tắt" },
   "f-sum-d": { ko: "현재 화면을 대화창에 요약해요", en: "Summarizes this page into the chat", zh: "把此页面摘要到对话", vi: "Tóm tắt trang này vào trò chuyện" },
   "f-rec": { ko: "화면 기록", en: "Screen capture", zh: "屏幕记录", vi: "Chụp màn hình" },
@@ -68,6 +68,34 @@ function updatePlanLabels() {
     if (nm) nm.textContent = `${planWord(b.dataset.plan)} · ${b.dataset.plan === "openai" ? "ChatGPT" : "Gemini"}`;
   });
 }
+
+// 상태/안내 문구 i18n
+const MSG = {
+  reading:     { ko: "페이지를 읽는 중…", en: "Reading the page…", zh: "正在读取页面…", vi: "Đang đọc trang…" },
+  summarizing: { ko: "현재 화면을 요약하는 중…", en: "Summarizing this page…", zh: "正在摘要此页面…", vi: "Đang tóm tắt trang…" },
+  capturing:   { ko: "화면을 캡처하는 중…", en: "Capturing the screen…", zh: "正在截图…", vi: "Đang chụp màn hình…" },
+  captured:    { ko: "보관함에 저장했어요 ✓", en: "Saved to your library ✓", zh: "已保存到收藏 ✓", vi: "Đã lưu vào mục đã lưu ✓" },
+  captureFail: { ko: "캡처 실패", en: "Capture failed", zh: "截图失败", vi: "Chụp thất bại" },
+  enterGoal:   { ko: "하고 싶은 일을 적어 주세요.", en: "Please type what you want to do.", zh: "请输入您想做的事。", vi: "Hãy nhập việc bạn muốn làm." },
+  noTab:       { ko: "활성 탭을 찾을 수 없어요.", en: "No active tab found.", zh: "找不到活动标签页。", vi: "Không tìm thấy tab đang mở." },
+  readFail:    { ko: "페이지를 읽지 못했어요. 새로고침 후 다시 시도해 주세요.", en: "Couldn't read the page. Refresh and try again.", zh: "无法读取页面。请刷新后重试。", vi: "Không đọc được trang. Hãy làm mới và thử lại." },
+  mockGuide:   { ko: "· 데모(mock) 응답이에요. 서버에 키를 넣으면 실제 AI로 바뀝니다.", en: "· Demo (mock) response. Add a key on the server for real AI.", zh: "· 演示(mock)响应。在服务器填入密钥即可使用真实 AI。", vi: "· Phản hồi demo (mock). Thêm khóa trên máy chủ để dùng AI thật." },
+  mockSummary: { ko: "· 데모(mock) 요약이에요. 서버에 키를 넣으면 실제 AI로 바뀝니다.", en: "· Demo (mock) summary. Add a key on the server for real AI.", zh: "· 演示(mock)摘要。在服务器填入密钥即可使用真实 AI。", vi: "· Tóm tắt demo (mock). Thêm khóa để dùng AI thật." },
+  regenSummary:{ ko: "요약을 새 언어로 바꾸는 중…", en: "Switching summary to the new language…", zh: "正在切换摘要语言…", vi: "Đang đổi ngôn ngữ tóm tắt…" },
+  regenGuide:  { ko: "안내를 새 언어로 바꾸는 중…", en: "Switching guidance to the new language…", zh: "正在切换指引语言…", vi: "Đang đổi ngôn ngữ hướng dẫn…" },
+  langFail:    { ko: "언어 변경 실패", en: "Language change failed", zh: "语言切换失败", vi: "Đổi ngôn ngữ thất bại" },
+  shown:       { ko: "페이지에서 표시했어요 ✓", en: "Highlighted on the page ✓", zh: "已在页面标记 ✓", vi: "Đã đánh dấu trên trang ✓" },
+  notFound:    { ko: "그 버튼을 페이지에서 못 찾았어요.", en: "Couldn't find that button on the page.", zh: "在页面上找不到该按钮。", vi: "Không tìm thấy nút đó trên trang." },
+  adsHidden:   { ko: "광고 {n}개를 가렸어요 ✓", en: "Hid {n} ad(s) ✓", zh: "已隐藏 {n} 个广告 ✓", vi: "Đã ẩn {n} quảng cáo ✓" },
+  adsOff:      { ko: "광고 가리기를 껐어요.", en: "Ad hiding turned off.", zh: "已关闭广告遮盖。", vi: "Đã tắt che quảng cáo." },
+  adsNA:       { ko: "이 페이지에서는 광고 가리기를 쓸 수 없어요.", en: "Ad hiding isn't available on this page.", zh: "此页面无法使用广告遮盖。", vi: "Không dùng được che quảng cáo ở trang này." },
+  colorChanged:{ ko: "표시 색상을 바꿨어요 ✓", en: "Highlight color changed ✓", zh: "已更改标记颜色 ✓", vi: "Đã đổi màu đánh dấu ✓" },
+  planChanged: { ko: "{p} 플랜으로 바꿨어요 ✓", en: "Switched to the {p} plan ✓", zh: "已切换到{p}套餐 ✓", vi: "Đã chuyển sang gói {p} ✓" },
+  planFail:    { ko: "플랜 변경 실패", en: "Plan change failed", zh: "套餐切换失败", vi: "Đổi gói thất bại" },
+  upgradeHint: { ko: "(마이페이지에서 유료 플랜으로 전환)", en: "(Switch to a paid plan in My page)", zh: "(在我的页面切换到付费套餐)", vi: "(Chuyển sang gói trả phí ở trang Của tôi)" },
+  error:       { ko: "오류", en: "Error", zh: "错误", vi: "Lỗi" },
+};
+function m(key) { const o = MSG[key]; const c = LANGS[state.lang]; return (o && (o[c] || o.ko)) || ""; }
 
 function applyI18n() {
   Object.keys(T).forEach((id) => { const el = $(id); if (el) el.textContent = tr(id); });
@@ -202,7 +230,7 @@ function stepNavigator(steps, tabId) {
     try {
       const color = await getHighlightColor();
       const res = await sendToContent(tabId, { type: "WG_HIGHLIGHT", href: s.href, text: s.label, color });
-      setStatus(res?.ok ? `STEP ${idx + 1}: 페이지에서 표시했어요 ✓` : "그 버튼을 페이지에서 못 찾았어요.");
+      setStatus(res?.ok ? `STEP ${idx + 1}: ${m("shown")}` : m("notFound"));
     } catch { /* 특수 페이지 */ }
   }
   function render() {
@@ -319,7 +347,7 @@ async function regenerateAIContent(lang) {
   if (state.tab !== "chat" && state.tab !== "sum") return; // 요약/대화를 볼 때만
   const seq = ++__regenSeq;
   try {
-    setStatus(r.kind === "summary" ? "요약을 새 언어로 바꾸는 중…" : "안내를 새 언어로 바꾸는 중…");
+    setStatus(r.kind === "summary" ? m("regenSummary") : m("regenGuide"));
     let next;
     if (r.kind === "summary") {
       const out = await summarize({ lang, pageTitle: state.lastPage.pageTitle, pageText: state.lastPage.pageText });
@@ -336,7 +364,7 @@ async function regenerateAIContent(lang) {
   } catch (e) {
     if (seq !== __regenSeq) return;
     if (e.code === "auth") { await clearAuth(); showLogin(); }
-    setStatus("언어 변경 실패: " + e.message, true);
+    setStatus(m("langFail") + ": " + e.message, true);
   }
 }
 function rerenderCurrentTab() {
@@ -366,42 +394,42 @@ document.querySelectorAll("[data-feat]").forEach((btn) =>
         const tab = await getActiveTab();
         if (tab?.id) {
           const res = await sendToContent(tab.id, { type: state.toggles.filter ? "WG_FILTER_ADS" : "WG_UNFILTER" });
-          setStatus(state.toggles.filter ? `광고 ${res?.count ?? 0}개를 가렸어요 ✓` : "광고 가리기를 껐어요.");
+          setStatus(state.toggles.filter ? m("adsHidden").replace("{n}", res?.count ?? 0) : m("adsOff"));
         }
-      } catch { setStatus("이 페이지에서는 광고 가리기를 쓸 수 없어요.", true); }
+      } catch { setStatus(m("adsNA"), true); }
     }
   }));
 
 // ---- 요약 버튼: 현재 화면을 대화창에 요약 ----
 $("btn-summarize")?.addEventListener("click", async () => {
   const btn = $("btn-summarize"); btn.disabled = true;
-  setStatus("현재 화면을 요약하는 중…");
+  setStatus(m("summarizing"));
   setTab("chat");
   const body = $("tab-chat").querySelector(".hd-chat-body");
   if (body) body.innerHTML = `<div class="hd-bub bot">${esc(loadingMsg())}</div>`;
   try {
     const tab = await getActiveTab();
-    if (!tab?.id) throw new Error("활성 탭을 찾을 수 없어요.");
+    if (!tab?.id) throw new Error(m("noTab"));
     const page = await sendToContent(tab.id, { type: "WG_EXTRACT" });
-    if (!page) throw new Error("페이지를 읽지 못했어요. 새로고침 후 다시 시도해 주세요.");
+    if (!page) throw new Error(m("readFail"));
     state.lastPage = { pageTitle: page.title, pageText: page.pageText, links: page.links, tabId: tab.id };
     const out = await summarize({ lang: state.lang, pageTitle: page.title, pageText: page.pageText });
     state.guideResult = { kind: "summary", goal: tr("f-sum"), summary: out.summary, bullets: out.bullets || [], pageTitle: page.title };
     renderChatPage();
     await saveEntry({ type: "summary", title: page.title || tr("f-sum"), at: new Date().toISOString() });
     renderAccount(await getAccount());
-    setStatus(out.mock ? "· 데모(mock) 요약이에요. 서버에 키를 넣으면 실제 AI로 바뀝니다." : "");
+    setStatus(out.mock ? m("mockSummary") : "");
   } catch (e) {
     if (e.code === "quota") { setTab("my"); setStatus(e.message, true); renderAccount(await getAccount()); }
     else if (e.code === "auth") { await clearAuth(); showLogin(); setStatus(e.message, true); }
-    else { const b = $("tab-chat").querySelector(".hd-chat-body"); if (b) b.innerHTML = `<div class="hd-bub bot">${esc("오류: " + e.message)}</div>`; setStatus("오류: " + e.message, true); }
+    else { const b = $("tab-chat").querySelector(".hd-chat-body"); if (b) b.innerHTML = `<div class="hd-bub bot">${esc(m("error") + ": " + e.message)}</div>`; setStatus(m("error") + ": " + e.message, true); }
   } finally { btn.disabled = false; }
 });
 
 // ---- 화면 기록 버튼: 지금 화면 캡처 → 보관함 ----
 $("btn-capture")?.addEventListener("click", async () => {
   const btn = $("btn-capture"); btn.disabled = true;
-  setStatus("화면을 캡처하는 중…");
+  setStatus(m("capturing"));
   try {
     let thumb = "";
     try { if (chrome.tabs?.captureVisibleTab) thumb = await chrome.tabs.captureVisibleTab({ format: "png" }); } catch { /* 특수 페이지 캡처 불가 */ }
@@ -409,9 +437,9 @@ $("btn-capture")?.addEventListener("click", async () => {
     const title = tab?.title || (state.lastPage?.pageTitle) || "—"; // "캡처"는 카테고리 헤더가 언어별로 표시
     await saveEntry({ type: "capture", title, at: new Date().toISOString(), thumb });
     setTab("save");
-    setStatus("보관함에 저장했어요 ✓");
+    setStatus(m("captured"));
   } catch (e) {
-    setStatus("캡처 실패: " + e.message, true);
+    setStatus(m("captureFail") + ": " + e.message, true);
   } finally { btn.disabled = false; }
 });
 
@@ -434,31 +462,31 @@ $("hero-input").addEventListener("keydown", (e) => { if (e.key === "Enter") runG
 
 async function runGuide(goalText) {
   const goal = String(goalText != null ? goalText : "").trim();
-  if (!goal) return setStatus("하고 싶은 일을 적어 주세요.", true);
+  if (!goal) return setStatus(m("enterGoal"), true);
   state.userGoal = goal;
-  setStatus("페이지를 읽는 중…");
+  setStatus(m("reading"));
   setTab("chat");
   const body = $("tab-chat").querySelector(".hd-chat-body");
   if (body) body.innerHTML = `<div class="hd-bub bot">${esc(loadingMsg())}</div>`;
   try {
     const tab = await getActiveTab();
-    if (!tab?.id) throw new Error("활성 탭을 찾을 수 없어요.");
+    if (!tab?.id) throw new Error(m("noTab"));
     const page = await sendToContent(tab.id, { type: "WG_EXTRACT" });
-    if (!page) throw new Error("페이지를 읽지 못했어요. 새로고침 후 다시 시도해 주세요.");
+    if (!page) throw new Error(m("readFail"));
     state.lastPage = { pageTitle: page.title, pageText: page.pageText, links: page.links, tabId: tab.id };
     const out = await guide({ goal, lang: state.lang, pageTitle: page.title, pageText: page.pageText, links: page.links });
     state.guideResult = { ...out, goal, pageTitle: page.title, tabId: tab.id };
     renderChatPage();
     await saveEntry({ type: "guide", title: goal, at: new Date().toISOString() });
     renderAccount(await getAccount());
-    setStatus(out.mock ? "· 데모(mock) 응답이에요. 서버에 키를 넣으면 실제 AI로 바뀝니다." : "");
+    setStatus(out.mock ? m("mockGuide") : "");
   } catch (e) {
-    if (e.code === "quota") { setTab("my"); setStatus(e.message + " (마이페이지에서 유료 플랜으로 전환)", true); renderAccount(await getAccount()); }
+    if (e.code === "quota") { setTab("my"); setStatus(e.message + " " + m("upgradeHint"), true); renderAccount(await getAccount()); }
     else if (e.code === "auth") { await clearAuth(); showLogin(); setStatus(e.message, true); }
     else {
       const b = $("tab-chat").querySelector(".hd-chat-body");
-      if (b) b.innerHTML = `<div class="hd-bub bot">${esc("오류: " + e.message)}</div>`;
-      setStatus("오류: " + e.message, true);
+      if (b) b.innerHTML = `<div class="hd-bub bot">${esc(m("error") + ": " + e.message)}</div>`;
+      setStatus(m("error") + ": " + e.message, true);
     }
   }
 }
@@ -482,7 +510,7 @@ function targetCard(nextLink, tabId) {
   find.addEventListener("click", async () => {
     const color = await getHighlightColor();
     const res = await sendToContent(tabId, { type: "WG_HIGHLIGHT", href: nextLink.href, text: nextLink.text, color });
-    setStatus(res?.ok ? "페이지에서 표시했어요 ✓" : "그 링크를 페이지에서 못 찾았어요.");
+    setStatus(res?.ok ? m("shown") : m("notFound"));
   });
   d.appendChild(find); return d;
 }
@@ -557,7 +585,9 @@ function savedRow(it, cat) {
   row.innerHTML = `${icon}
     <div class="meta"><div class="top"><span class="type mono">${cat.chip}</span><span class="date">${date}</span></div>
     <div class="title"></div></div><span class="chev">›</span>`;
-  row.querySelector(".title").textContent = it.title;
+  // 옛 캡처 항목의 하드코딩 "캡처" 접미사 제거(분류는 카테고리 헤더가 언어별로 표시)
+  const title = it.type === "capture" ? String(it.title || "").replace(/\s*캡처$/, "") : it.title;
+  row.querySelector(".title").textContent = title;
   if (isShot) {
     row.classList.add("clickable");
     row.addEventListener("click", () => openImageModal(it.thumb, it.title));
@@ -682,7 +712,7 @@ document.querySelectorAll("#my-colors .hd-color").forEach((b) =>
   b.addEventListener("click", async () => {
     await saveHighlightColor(b.dataset.color);
     await renderColorPicker();
-    setStatus("표시 색상을 바꿨어요 ✓");
+    setStatus(m("colorChanged"));
   }));
 $("my-color-custom")?.addEventListener("input", async (e) => {
   await saveHighlightColor(e.target.value);
@@ -692,8 +722,8 @@ $("my-color-custom")?.addEventListener("input", async (e) => {
 document.querySelectorAll("#my-plans button").forEach((b) =>
   b.addEventListener("click", async () => {
     try { const account = await changePlan(b.dataset.plan); await saveProfile({ plan: b.dataset.plan }); renderAccount(account);
-      setStatus(`${planWord(b.dataset.plan)} 플랜으로 바꿨어요 ✓`); }
-    catch (e) { setStatus("플랜 변경 실패: " + e.message, true); }
+      setStatus(m("planChanged").replace("{p}", planWord(b.dataset.plan))); }
+    catch (e) { setStatus(m("planFail") + ": " + e.message, true); }
   }));
 
 $("logout-btn").addEventListener("click", async () => {
