@@ -105,6 +105,19 @@ function renderChatPage() {
   if (state.guideResult) buildChatMessages(body);
   else buildChatEmpty(body);
   el.appendChild(body);
+
+  // 추가 질문 입력행 (계속 대화)
+  const row = document.createElement("div");
+  row.className = "hd-chat-input";
+  const input = document.createElement("input");
+  input.type = "text"; input.placeholder = tr("hero-input"); // "Ask me anything!"
+  const send = document.createElement("button");
+  send.className = "send"; send.textContent = "➜";
+  const go = () => { const v = input.value.trim(); if (v) runGuide(v); };
+  send.addEventListener("click", go);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  row.appendChild(input); row.appendChild(send);
+  el.appendChild(row);
 }
 
 function buildChatEmpty(body) {
@@ -140,6 +153,16 @@ function buildChatMessages(body) {
     body.appendChild(stepNavigator(steps, r.tabId));
   }
   if (r.warnings && r.warnings.length) body.appendChild(warnCard(r.warnings));
+
+  // 페이지가 넘어가면 새 화면에서 다음 단계를 이어서 안내
+  const goal = state.userGoal || r.goal;
+  if (goal) {
+    const cont = document.createElement("button");
+    cont.className = "hd-continue";
+    cont.textContent = { ko: "화면이 바뀌었나요? 이 화면에서 계속 안내받기 →", en: "Page changed? Continue on this screen →", zh: "页面变了吗？在此页面继续 →", vi: "Trang đã đổi? Tiếp tục ở đây →" }[LANGS[state.lang]];
+    cont.addEventListener("click", () => runGuide(goal));
+    body.appendChild(cont);
+  }
 }
 
 // 요약 bullet 카드
@@ -269,7 +292,37 @@ function changeLang(lang) {
   state.lang = lang;
   applyI18n();
   rerenderCurrentTab();
-  saveProfile({ lang }); // fire-and-forget → UI 즉시 반영
+  saveProfile({ lang });          // fire-and-forget → UI 즉시 반영
+  regenerateAIContent(lang);      // 표시 중인 AI 요약/안내를 새 언어로 재생성
+}
+
+// AI가 만든 요약/안내는 언어 고정 → 언어 바꾸면 그 언어로 다시 생성(보고 있을 때만)
+let __regenSeq = 0;
+async function regenerateAIContent(lang) {
+  const r = state.guideResult;
+  if (!r || !state.lastPage) return;
+  if (state.tab !== "chat" && state.tab !== "sum") return; // 요약/대화를 볼 때만
+  const seq = ++__regenSeq;
+  try {
+    setStatus(r.kind === "summary" ? "요약을 새 언어로 바꾸는 중…" : "안내를 새 언어로 바꾸는 중…");
+    let next;
+    if (r.kind === "summary") {
+      const out = await summarize({ lang, pageTitle: state.lastPage.pageTitle, pageText: state.lastPage.pageText });
+      next = { ...r, summary: out.summary, bullets: out.bullets || [] };
+    } else {
+      const out = await guide({ goal: r.goal, lang, pageTitle: state.lastPage.pageTitle, pageText: state.lastPage.pageText, links: state.lastPage.links });
+      next = { ...out, goal: r.goal, pageTitle: state.lastPage.pageTitle, tabId: state.lastPage.tabId };
+    }
+    if (seq !== __regenSeq) return; // 그 사이 또 언어 바뀌면 최신 것만 반영
+    state.guideResult = next;
+    rerenderCurrentTab();
+    renderAccount(await getAccount());
+    setStatus("");
+  } catch (e) {
+    if (seq !== __regenSeq) return;
+    if (e.code === "auth") { await clearAuth(); showLogin(); }
+    setStatus("언어 변경 실패: " + e.message, true);
+  }
 }
 function rerenderCurrentTab() {
   if (state.tab === "chat") renderChatPage();
@@ -316,6 +369,7 @@ $("btn-summarize")?.addEventListener("click", async () => {
     if (!tab?.id) throw new Error("활성 탭을 찾을 수 없어요.");
     const page = await sendToContent(tab.id, { type: "WG_EXTRACT" });
     if (!page) throw new Error("페이지를 읽지 못했어요. 새로고침 후 다시 시도해 주세요.");
+    state.lastPage = { pageTitle: page.title, pageText: page.pageText, links: page.links, tabId: tab.id };
     const out = await summarize({ lang: state.lang, pageTitle: page.title, pageText: page.pageText });
     state.guideResult = { kind: "summary", goal: tr("f-sum"), summary: out.summary, bullets: out.bullets || [], pageTitle: page.title };
     renderChatPage();
@@ -376,6 +430,7 @@ async function runGuide(goalText) {
     if (!tab?.id) throw new Error("활성 탭을 찾을 수 없어요.");
     const page = await sendToContent(tab.id, { type: "WG_EXTRACT" });
     if (!page) throw new Error("페이지를 읽지 못했어요. 새로고침 후 다시 시도해 주세요.");
+    state.lastPage = { pageTitle: page.title, pageText: page.pageText, links: page.links, tabId: tab.id };
     const out = await guide({ goal, lang: state.lang, pageTitle: page.title, pageText: page.pageText, links: page.links });
     state.guideResult = { ...out, goal, pageTitle: page.title, tabId: tab.id };
     renderChatPage();
@@ -436,7 +491,8 @@ function renderSummary() {
   el.innerHTML = `<div class="hd-sum-tag">${esc(tag)}</div><div class="hd-sum-title"></div><ul class="hd-sum-list"></ul>`;
   el.querySelector(".hd-sum-title").textContent = r.pageTitle || r.goal;
   const ul = el.querySelector(".hd-sum-list");
-  const items = [r.summary, ...(r.steps || [])].filter(Boolean);
+  const detail = r.kind === "summary" ? (r.bullets || []) : (r.steps || []).map((s) => (typeof s === "string" ? s : s.text));
+  const items = [r.summary, ...detail].filter(Boolean);
   items.forEach((it, i) => { const li = document.createElement("li"); li.innerHTML = `<span class="n">${i + 1}</span><p></p>`; li.querySelector("p").textContent = it; ul.appendChild(li); });
 }
 

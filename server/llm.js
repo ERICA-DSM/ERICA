@@ -9,7 +9,10 @@ const SYSTEM_PROMPT = (lang) => `당신은 한국 행정·생활 웹사이트를
 
 규칙:
 - ${lang} 언어로, 쉬운 말로 설명합니다. 어려운 행정용어는 풀어서 씁니다.
-- steps에는 목적 달성까지의 단계를 순서대로 담습니다(보통 2~6단계).
+- **지금 이 페이지에서 실제로 할 수 있는 단계**를 순서대로 구체적으로 담습니다(보통 1~5단계).
+  버튼을 눌러 다른 페이지로 이동해야 하면, 그 "이동시키는 단계"까지만 안내하세요. 이동 후의 화면은
+  지금 볼 수 없으므로 추측해서 지어내지 말고, 사용자가 이동한 뒤 그 화면에서 다시 이어서 안내받습니다.
+- steps에는 목적 달성까지의 단계를 순서대로 담습니다(보통 1~5단계).
 - **각 단계는 객체**입니다: text(그 단계에서 무엇을 하는지 ${lang}로 지시), label(그 단계에서 눌러야 할
   현재 페이지의 실제 버튼/링크 텍스트 — 링크 목록에서 label=official 우선, 있으면 그 text 그대로. 없으면 빈 문자열 ""),
   href(그 링크의 href, 없으면 "").
@@ -108,9 +111,9 @@ function isMock(plan, env) {
 function mockGuide({ goal, lang, pageTitle, links }) {
   const officials = (links || []).filter((l) => l.label === "official");
   const steps = [
-    { text: `[데모] '${goal}'을(를) 위해 먼저 아래 버튼을 누르세요.`, label: officials[0]?.text || "", href: officials[0]?.href || "" },
-    { text: `[데모] 다음 페이지에서 안내에 따라 필요한 항목을 선택하세요.`, label: officials[1]?.text || officials[0]?.text || "", href: officials[1]?.href || officials[0]?.href || "" },
-    { text: `[데모] 정보를 확인하고 신청/조회를 완료하세요.`, label: "", href: "" },
+    { text: `[데모·${lang}] '${goal}'을(를) 위해 먼저 아래 버튼을 누르세요.`, label: officials[0]?.text || "", href: officials[0]?.href || "" },
+    { text: `[데모·${lang}] 다음 페이지에서 안내에 따라 필요한 항목을 선택하세요.`, label: officials[1]?.text || officials[0]?.text || "", href: officials[1]?.href || officials[0]?.href || "" },
+    { text: `[데모·${lang}] 정보를 확인하고 신청/조회를 완료하세요.`, label: "", href: "" },
   ];
   return {
     summary: `[데모(mock)] '${pageTitle || "이 페이지"}'에 대한 ${lang} 안내입니다. 서버에 실제 API 키를 넣으면 진짜 AI 안내로 바뀝니다.`,
