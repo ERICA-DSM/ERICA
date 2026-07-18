@@ -1,0 +1,24 @@
+{
+  "database": "wg_db",
+  "engine": "IndexedDB (브라우저 내장)",
+  "version": 1,
+  "stores": {
+    "users": {
+      "keyPath": "id",
+      "autoIncrement": true,
+      "indexes": ["createdAt", "nationality", "plan"],
+      "fields": {
+        "id": "number — 자동 증가 기본키",
+        "name": "string — 이름",
+        "birthday": "string — 생일 (YYYY-MM-DD)",
+        "gender": "string — 성별 (남성/여성/기타/응답 안 함)",
+        "age": "string — 나이",
+        "nationality": "string — 국적",
+        "lang": "string — 모국어 (베트남어/영어/중국어/한국어)",
+        "purpose": "string — 사용 목적 (행정·민원/의료·건강/교육·자녀/취업·근로/금융·세금/기타)",
+        "plan": "string — 선택한 플랜 (gemini=무료 | openai=유료)",
+        "createdAt": "string — 생성 시각 (ISO 8601)"
+      }
+    }
+  }
+}

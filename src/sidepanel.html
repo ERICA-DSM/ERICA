@@ -13,7 +13,96 @@
       <button id="settings-toggle" class="wg-gear" title="설정">⚙</button>
     </div>
     <div class="wg-sub">목적을 말하면, 다음 한 걸음을 안내해요</div>
+    <!-- 로그인 상태 바 (온보딩 완료 후에만 표시) -->
+    <div id="profile-bar" class="wg-profile-bar" hidden>
+      <span class="wg-profile-name">👤 <span id="profile-name-label"></span></span>
+      <button id="logout-btn" class="wg-link-btn" type="button">로그아웃</button>
+    </div>
   </header>
+
+  <!-- 첫 세션: 프로필(로컬) 설정 화면. onboarded 되면 숨겨지고 #main-app이 보인다. -->
+  <section id="onboarding" class="wg-onboarding" hidden>
+    <div class="wg-onb-title">👋 첫 입장이신가요?</div>
+    <div class="wg-onb-sub">정보를 입력하고 플랜을 선택하면 시작해요.</div>
+
+    <label class="wg-label">이름 / Name</label>
+    <input id="profileName" class="wg-input" type="text" placeholder="예: 응웬 / Nguyen" autocomplete="off" />
+
+    <label class="wg-label">생일 / Birthday</label>
+    <input id="profileBirthday" class="wg-input" type="date" />
+
+    <label class="wg-label">성별 / Gender</label>
+    <select id="profileGender" class="wg-select">
+      <option value="">선택해 주세요</option>
+      <option value="남성">남성</option>
+      <option value="여성">여성</option>
+      <option value="기타">기타</option>
+      <option value="응답 안 함">응답 안 함</option>
+    </select>
+
+    <label class="wg-label">나이 / Age</label>
+    <input id="profileAge" class="wg-input" type="number" min="0" max="120" placeholder="예: 32" />
+
+    <label class="wg-label">국적 / Nationality</label>
+    <select id="profileNationality" class="wg-select">
+      <option value="">선택해 주세요</option>
+      <option value="베트남">🇻🇳 베트남</option>
+      <option value="중국">🇨🇳 중국</option>
+      <option value="필리핀">🇵🇭 필리핀</option>
+      <option value="캄보디아">🇰🇭 캄보디아</option>
+      <option value="태국">🇹🇭 태국</option>
+      <option value="일본">🇯🇵 일본</option>
+      <option value="미국">🇺🇸 미국</option>
+      <option value="한국">🇰🇷 한국</option>
+      <option value="기타">기타</option>
+    </select>
+
+    <label class="wg-label">모국어 / Language</label>
+    <select id="profileLang" class="wg-select">
+      <option value="베트남어">🇻🇳 Tiếng Việt (베트남어)</option>
+      <option value="영어">🇺🇸 English (영어)</option>
+      <option value="중국어">🇨🇳 中文 (중국어)</option>
+      <option value="한국어">🇰🇷 한국어</option>
+    </select>
+
+    <label class="wg-label">사용 목적 / Purpose</label>
+    <select id="profilePurpose" class="wg-select">
+      <option value="">선택해 주세요</option>
+      <option value="행정·민원">행정·민원</option>
+      <option value="의료·건강">의료·건강</option>
+      <option value="교육·자녀">교육·자녀</option>
+      <option value="취업·근로">취업·근로</option>
+      <option value="금융·세금">금융·세금</option>
+      <option value="기타">기타</option>
+    </select>
+
+    <label class="wg-label">플랜 선택 / Plan</label>
+    <div class="wg-plans">
+      <button type="button" class="wg-plan" data-plan="gemini" id="plan-gemini">
+        <span class="wg-plan-tag wg-plan-free">무료</span>
+        <span class="wg-plan-name">Google Gemini</span>
+        <span class="wg-plan-desc">적은 사용량 · 무료 할당량으로 시작</span>
+      </button>
+      <button type="button" class="wg-plan" data-plan="openai" id="plan-openai">
+        <span class="wg-plan-tag wg-plan-paid">유료</span>
+        <span class="wg-plan-name">ChatGPT (OpenAI)</span>
+        <span class="wg-plan-desc">많은 사용량 · 유료 결제 키</span>
+      </button>
+    </div>
+
+    <!-- 선택한 플랜에 따라 어떤 API 키를 쓸지 표시 -->
+    <div id="onb-key-wrap" hidden>
+      <label class="wg-label"><span id="onb-key-label">API 키</span></label>
+      <input id="onbApiKey" class="wg-input" type="password" placeholder="키를 붙여넣어 주세요" autocomplete="off" />
+      <a id="onb-key-help" class="wg-help" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">→ 키 발급받기</a>
+    </div>
+
+    <button id="start-btn" class="wg-btn" type="button">시작하기</button>
+    <div id="onboarding-status" class="wg-status"></div>
+  </section>
+
+  <!-- 메인 앱: 온보딩 완료 후 표시 -->
+  <div id="main-app" hidden>
 
   <!-- 첫 실행: API 키 안내 배너 -->
   <div id="key-banner" class="wg-banner" hidden>
@@ -65,6 +154,8 @@
 
   <section id="result" class="wg-result" hidden></section>
   <div id="status" class="wg-status"></div>
+
+  </div><!-- /#main-app -->
 
   <script type="module" src="sidepanel.js"></script>
 </body>

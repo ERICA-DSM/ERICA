@@ -1,6 +1,10 @@
 // sidepanel.js — 패널 UI 로직
 import { guide } from "./ai.js";
-import { getSettings, saveSettings, hasApiKey } from "./settings.js";
+import {
+  getSettings, saveSettings, hasApiKey,
+  getProfile, saveProfile, logout,
+} from "./settings.js";
+import { addUser } from "./db.js";
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status");
@@ -58,11 +62,119 @@ $("save-settings").addEventListener("click", async () => {
   if (ok) setTimeout(() => openSettings(false), 700);
 });
 
-// 첫 실행 시: 키 없으면 설정 자동 열기
+// ---------- 프로필(로컬 로그인) / 온보딩 ----------
+// 첫 세션이면 프로필 화면(#onboarding)을, 이후엔 메인(#main-app)을 보여준다.
+function showOnboarding(show) {
+  $("onboarding").hidden = !show;
+  $("main-app").hidden = show;
+  $("profile-bar").hidden = show; // 온보딩 중엔 상단 프로필 바 숨김
+}
+
+// 프로필을 반영하며 메인 앱으로 진입
+async function enterApp(profile) {
+  $("profile-name-label").textContent = profile.name || "손님";
+  $("lang").value = profile.lang;          // 메인 폼 언어 기본값 = 프로필 모국어
+  showOnboarding(false);
+  const ok = await refreshKeyBanner();     // API 키 없으면 설정 자동 열기
+  if (!ok) openSettings(true);
+}
+
+// ---- 플랜 선택(무료 Gemini / 유료 ChatGPT) ----
+// 선택한 플랜에 따라 "어떤 API 키를 넣어야 하는지"를 아래에 표시한다.
+let selectedPlan = "";
+const KEY_HINTS = {
+  gemini: { label: "Gemini API 키", ph: "AIza… (Google AI Studio에서 발급)", help: "https://aistudio.google.com/app/apikey" },
+  openai: { label: "OpenAI API 키", ph: "sk-… (OpenAI에서 발급)", help: "https://platform.openai.com/api-keys" },
+};
+function selectPlan(plan) {
+  selectedPlan = plan;
+  $("plan-gemini").classList.toggle("selected", plan === "gemini");
+  $("plan-openai").classList.toggle("selected", plan === "openai");
+  const hint = KEY_HINTS[plan];
+  $("onb-key-label").textContent = hint.label;
+  $("onbApiKey").placeholder = hint.ph;
+  $("onbApiKey").value = "";
+  $("onb-key-help").href = hint.help;
+  $("onb-key-wrap").hidden = false;
+}
+$("plan-gemini").addEventListener("click", () => selectPlan("gemini"));
+$("plan-openai").addEventListener("click", () => selectPlan("openai"));
+
+// "시작하기": 프로필·플랜·키 저장(설정+DB) 후 메인 진입
+$("start-btn").addEventListener("click", async () => {
+  const s = $("onboarding-status");
+  const fail = (msg) => { s.textContent = msg; s.classList.add("err"); };
+  s.textContent = ""; s.classList.remove("err");
+
+  const name = $("profileName").value.trim();
+  if (!name) return fail("이름을 입력해 주세요.");
+  if (!selectedPlan) return fail("플랜을 선택해 주세요.");
+  const apiKey = $("onbApiKey").value.trim();
+  if (!apiKey) return fail("선택한 플랜의 API 키를 넣어 주세요.");
+
+  const profileData = {
+    name,
+    birthday: $("profileBirthday").value,
+    gender: $("profileGender").value,
+    age: $("profileAge").value,
+    nationality: $("profileNationality").value,
+    lang: $("profileLang").value,
+    purpose: $("profilePurpose").value,
+    plan: selectedPlan,
+  };
+
+  // 1) 설정에 provider + 해당 키 저장 (메인 앱이 바로 동작하도록)
+  await saveSettings(
+    selectedPlan === "openai"
+      ? { provider: "openai", openaiApiKey: apiKey }
+      : { provider: "gemini", geminiApiKey: apiKey }
+  );
+
+  // 2) DB(IndexedDB)에 조회용 레코드 적재
+  try {
+    await addUser(profileData);
+  } catch (e) {
+    console.error("DB 저장 실패:", e);  // DB 실패해도 진입은 막지 않음
+  }
+
+  // 3) 빠른 UI용 프로필 저장 + 온보딩 완료 표시
+  const profile = await saveProfile({ ...profileData, onboarded: true });
+
+  await loadSettingsIntoForm();  // 방금 저장한 키를 설정 폼에도 반영
+  await enterApp(profile);
+});
+
+// "로그아웃": 프로필·설정 초기화 후 다시 첫 세션 화면으로
+// (DB의 과거 레코드는 조회용으로 보존)
+$("logout-btn").addEventListener("click", async () => {
+  await logout();
+  // 온보딩 폼 상태 리셋
+  ["profileName", "profileBirthday", "profileAge", "onbApiKey"].forEach((id) => { $(id).value = ""; });
+  ["profileGender", "profileNationality", "profilePurpose"].forEach((id) => { $(id).value = ""; });
+  $("profileLang").value = "베트남어";
+  selectedPlan = "";
+  $("plan-gemini").classList.remove("selected");
+  $("plan-openai").classList.remove("selected");
+  $("onb-key-wrap").hidden = true;
+  $("onboarding-status").textContent = "";
+  // 메인 상태 리셋
+  openSettings(false);
+  resultEl.hidden = true;
+  resultEl.innerHTML = "";
+  setStatus("");
+  await loadSettingsIntoForm();  // 지워진 설정을 기본값으로 되돌림
+  showOnboarding(true);
+});
+
+// 첫 실행 분기: 온보딩 완료 여부로 화면 결정
 (async () => {
   await loadSettingsIntoForm();
-  const ok = await refreshKeyBanner();
-  if (!ok) openSettings(true);
+  const profile = await getProfile();
+  if (profile.onboarded) {
+    await enterApp(profile);
+  } else {
+    showOnboarding(true);
+  }
 })();
 
 async function getActiveTab() {

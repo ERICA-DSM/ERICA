@@ -2,6 +2,7 @@
 // config.js 파일 없이, 사용자가 패널 UI에서 키를 입력하면 브라우저에 저장됩니다.
 
 const KEY = "wg_settings";
+const PROFILE_KEY = "wg_profile";
 
 export const DEFAULTS = {
   provider: "gemini",               // "gemini" | "openai"
@@ -9,6 +10,21 @@ export const DEFAULTS = {
   geminiModel: "gemini-2.0-flash",  // 빠르고 저렴. 필요시 gemini-2.5-flash 등으로 변경
   openaiApiKey: "",
   openaiModel: "gpt-4o-mini",
+};
+
+// 로컬 프로필: 서버/계정 없이 브라우저에만 저장되는 사용자 정보.
+// onboarded=true 여야 첫 세션 프로필 화면을 건너뛴다.
+// 전체 이력은 db.js(IndexedDB)에 별도 저장되어 나중에 조회 가능.
+export const PROFILE_DEFAULTS = {
+  name: "",
+  birthday: "",
+  gender: "",
+  age: "",
+  nationality: "",
+  lang: "베트남어",   // sidepanel의 언어 선택값과 동일한 라벨 사용
+  purpose: "",
+  plan: "gemini",     // "gemini"(무료) | "openai"(유료) — settings.provider와 연동
+  onboarded: false,
 };
 
 // 저장된 설정을 기본값 위에 병합해서 반환
@@ -29,4 +45,28 @@ export async function saveSettings(patch) {
 export async function hasApiKey() {
   const s = await getSettings();
   return s.provider === "openai" ? !!s.openaiApiKey.trim() : !!s.geminiApiKey.trim();
+}
+
+// ---------- 프로필(로컬) ----------
+export async function getProfile() {
+  const obj = await chrome.storage.local.get(PROFILE_KEY);
+  return { ...PROFILE_DEFAULTS, ...(obj[PROFILE_KEY] || {}) };
+}
+
+export async function saveProfile(patch) {
+  const cur = await getProfile();
+  const next = { ...cur, ...patch };
+  await chrome.storage.local.set({ [PROFILE_KEY]: next });
+  return next;
+}
+
+// 첫 세션 여부 판단 (온보딩 완료 안 됐으면 프로필 화면부터)
+export async function isOnboarded() {
+  const p = await getProfile();
+  return !!p.onboarded;
+}
+
+// 로그아웃 = 초기화: 프로필 + API 설정을 모두 제거한다.
+export async function logout() {
+  await chrome.storage.local.remove([PROFILE_KEY, KEY]);
 }
