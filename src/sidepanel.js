@@ -55,9 +55,24 @@ const PH = {
   "hero-input": { ko: "Ask me anything!", en: "Ask me anything!", zh: "Ask me anything!", vi: "Ask me anything!" },
 };
 function tr(key) { const c = LANGS[state.lang]; return (T[key] && T[key][c]) || (T[key] && T[key].ko) || ""; }
+
+// 플랜(무료/유료) 언어별 라벨
+const PLAN_I18N = {
+  free: { ko: "무료", en: "Free", zh: "免费", vi: "Miễn phí" },
+  paid: { ko: "유료", en: "Paid", zh: "付费", vi: "Trả phí" },
+};
+function planWord(plan) { const c = LANGS[state.lang]; const o = plan === "openai" ? PLAN_I18N.paid : PLAN_I18N.free; return o[c] || o.ko; }
+function updatePlanLabels() {
+  document.querySelectorAll("#login-plans [data-plan], #my-plans [data-plan]").forEach((b) => {
+    const nm = b.querySelector(".p-name");
+    if (nm) nm.textContent = `${planWord(b.dataset.plan)} · ${b.dataset.plan === "openai" ? "ChatGPT" : "Gemini"}`;
+  });
+}
+
 function applyI18n() {
   Object.keys(T).forEach((id) => { const el = $(id); if (el) el.textContent = tr(id); });
   Object.keys(PH).forEach((id) => { const el = $(id); const c = LANGS[state.lang]; if (el) el.placeholder = PH[id][c] || PH[id].ko; });
+  updatePlanLabels(); // 무료/유료 라벨도 언어 반영
   // 언어칩 활성 표시
   document.querySelectorAll("[data-lang]").forEach((b) => b.classList.toggle("on", b.dataset.lang === state.lang));
 }
@@ -391,7 +406,7 @@ $("btn-capture")?.addEventListener("click", async () => {
     let thumb = "";
     try { if (chrome.tabs?.captureVisibleTab) thumb = await chrome.tabs.captureVisibleTab({ format: "png" }); } catch { /* 특수 페이지 캡처 불가 */ }
     const tab = await getActiveTab();
-    const title = (tab?.title || "화면") + " 캡처";
+    const title = tab?.title || (state.lastPage?.pageTitle) || "—"; // "캡처"는 카테고리 헤더가 언어별로 표시
     await saveEntry({ type: "capture", title, at: new Date().toISOString(), thumb });
     setTab("save");
     setStatus("보관함에 저장했어요 ✓");
@@ -611,7 +626,8 @@ function openHelp() {
 async function openPrivacy() {
   const account = state.account || (await getAccount());
   const profile = await getProfile();
-  const planLabel = ((account?.plan || profile.plan) === "openai") ? "유료 (ChatGPT)" : "무료 (Gemini)";
+  const curPlan = account?.plan || profile.plan;
+  const planLabel = `${planWord(curPlan)} (${curPlan === "openai" ? "ChatGPT" : "Gemini"})`;
   const rows = [
     { label: { ko: "이름", en: "Name", zh: "姓名", vi: "Tên" }, value: profile.name || account?.name || "—" },
     { label: { ko: "이메일", en: "Email", zh: "邮箱", vi: "Email" }, value: account?.email || profile.email || "—" },
@@ -676,7 +692,7 @@ $("my-color-custom")?.addEventListener("input", async (e) => {
 document.querySelectorAll("#my-plans button").forEach((b) =>
   b.addEventListener("click", async () => {
     try { const account = await changePlan(b.dataset.plan); await saveProfile({ plan: b.dataset.plan }); renderAccount(account);
-      setStatus(`플랜을 ${b.dataset.plan === "openai" ? "유료" : "무료"}로 바꿨어요 ✓`); }
+      setStatus(`${planWord(b.dataset.plan)} 플랜으로 바꿨어요 ✓`); }
     catch (e) { setStatus("플랜 변경 실패: " + e.message, true); }
   }));
 
