@@ -1,6 +1,6 @@
 // sidepanel.js — Hi :D 길잡이 (design/ 핸드오프 반영)
 import { guide, login, changePlan, getAccount, clearAuth } from "./api.js";
-import { getProfile, saveProfile, clearProfile } from "./settings.js";
+import { getProfile, saveProfile, clearProfile, getHighlightColor, saveHighlightColor } from "./settings.js";
 
 const $ = (id) => document.getElementById(id);
 const LANGS = { "한국어": "ko", "영어": "en", "중국어": "zh", "베트남어": "vi" };
@@ -42,6 +42,7 @@ const T = {
   "tabl-my": { ko: "마이페이지", en: "My page", zh: "我的", vi: "Của tôi" },
   "my-lang-label": { ko: "표시 언어 / Language", en: "Display language", zh: "显示语言", vi: "Ngôn ngữ hiển thị" },
   "my-plan-label": { ko: "플랜 / Plan", en: "Plan", zh: "套餐", vi: "Gói" },
+  "my-color-label": { ko: "표시 색상 / Highlight", en: "Highlight color", zh: "标记颜色", vi: "Màu đánh dấu" },
   "set-usage-l": { ko: "오늘 사용량", en: "Today's usage", zh: "今日用量", vi: "Dùng hôm nay" },
   "set-help": { ko: "도움말", en: "Help", zh: "帮助", vi: "Trợ giúp" },
   "set-privacy": { ko: "개인정보", en: "Privacy", zh: "隐私", vi: "Quyền riêng tư" },
@@ -233,7 +234,8 @@ function targetCard(nextLink, tabId) {
   const find = document.createElement("button"); find.className = "hd-linkbtn"; find.style.marginTop = "8px";
   find.textContent = { ko: "페이지에서 찾아주기", en: "Find it on the page", zh: "在页面中找到", vi: "Tìm trên trang" }[LANGS[state.lang]];
   find.addEventListener("click", async () => {
-    const res = await sendToContent(tabId, { type: "WG_HIGHLIGHT", href: nextLink.href, text: nextLink.text });
+    const color = await getHighlightColor();
+    const res = await sendToContent(tabId, { type: "WG_HIGHLIGHT", href: nextLink.href, text: nextLink.text, color });
     setStatus(res?.ok ? "페이지에서 표시했어요 ✓" : "그 링크를 페이지에서 못 찾았어요.");
   });
   d.appendChild(find); return d;
@@ -299,7 +301,28 @@ async function renderMy() {
   $("my-name").textContent = name;
   $("my-sub").textContent = (account?.email || "") + " · " + state.lang;
   renderAccount(account);
+  await renderColorPicker();
 }
+
+// 페이지 하이라이트 색상 선택
+async function renderColorPicker() {
+  const color = (await getHighlightColor()).toLowerCase();
+  document.querySelectorAll("#my-colors .hd-color").forEach((b) =>
+    b.classList.toggle("on", (b.dataset.color || "").toLowerCase() === color));
+  const custom = $("my-color-custom");
+  if (custom) custom.value = color;
+}
+document.querySelectorAll("#my-colors .hd-color").forEach((b) =>
+  b.addEventListener("click", async () => {
+    await saveHighlightColor(b.dataset.color);
+    await renderColorPicker();
+    setStatus("표시 색상을 바꿨어요 ✓");
+  }));
+$("my-color-custom")?.addEventListener("input", async (e) => {
+  await saveHighlightColor(e.target.value);
+  await renderColorPicker();
+});
+
 document.querySelectorAll("#my-plans button").forEach((b) =>
   b.addEventListener("click", async () => {
     try { const account = await changePlan(b.dataset.plan); await saveProfile({ plan: b.dataset.plan }); renderAccount(account);

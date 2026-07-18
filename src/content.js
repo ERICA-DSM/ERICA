@@ -47,8 +47,17 @@ function extractPage() {
 // 추천 링크 하이라이트
 // AI가 준 nextLink의 href/text가 DOM과 정확히 일치하지 않을 수 있으므로
 // (정규화 href) → (정확한 텍스트) → (부분 텍스트) 순으로 견고하게 매칭한다.
-function highlightLink(href, text) {
+// hex(#rrggbb) → rgba 문자열
+function hexToRgba(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if (!m) return `rgba(31,157,85,${alpha})`;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+function highlightLink(href, text, color) {
   clearHighlights();
+  color = color || "#1f9d55"; // 마이페이지에서 정한 색(기본 초록)
   const anchors = [...document.querySelectorAll("a")];
   const norm = (u) => {
     try { return new URL(u, location.href).href.replace(/#.*$/, "").replace(/\/+$/, ""); }
@@ -62,17 +71,28 @@ function highlightLink(href, text) {
   if (!target && wantText) target = anchors.find((a) => atext(a) === wantText);
   if (!target && wantText) target = anchors.find((a) => atext(a).includes(wantText));
   if (!target) return false;
+
   target.classList.add("__wg_highlight");
+  target.style.setProperty("outline", `3px solid ${color}`, "important");
+  target.style.setProperty("outline-offset", "2px", "important");
+  target.style.setProperty("border-radius", "4px", "important");
+  target.style.setProperty("background", hexToRgba(color, 0.1), "important");
+  target.style.setProperty("position", "relative", "important");
+
   const badge = document.createElement("span");
   badge.className = "__wg_badge";
   badge.textContent = "✓ 여기를 누르세요";
+  badge.style.setProperty("background", color, "important");
   target.appendChild(badge);
   target.scrollIntoView({ behavior: "smooth", block: "center" });
   return true;
 }
 
 function clearHighlights() {
-  document.querySelectorAll(".__wg_highlight").forEach((el) => el.classList.remove("__wg_highlight"));
+  document.querySelectorAll(".__wg_highlight").forEach((el) => {
+    el.classList.remove("__wg_highlight");
+    ["outline", "outline-offset", "border-radius", "background", "position"].forEach((p) => el.style.removeProperty(p));
+  });
   document.querySelectorAll(".__wg_badge").forEach((el) => el.remove());
 }
 
@@ -96,7 +116,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "WG_EXTRACT") {
     sendResponse(extractPage());
   } else if (msg?.type === "WG_HIGHLIGHT") {
-    sendResponse({ ok: highlightLink(msg.href, msg.text) });
+    sendResponse({ ok: highlightLink(msg.href, msg.text, msg.color) });
   } else if (msg?.type === "WG_CLEAR") {
     clearHighlights();
     sendResponse({ ok: true });

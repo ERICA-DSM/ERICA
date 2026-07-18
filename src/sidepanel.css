@@ -185,3 +185,13 @@ button{ font-family:inherit; cursor:pointer; }
 .hd-setrow .val{ color:var(--mut-2); font-size:12.5px; }
 .hd-status{ font-size:12px; color:var(--mut); text-align:center; padding:8px 16px; }
 .hd-status.err{ color:#c0392b; }
+
+/* 하이라이트 색상 선택 */
+.hd-colors{ display:flex; gap:8px; align-items:center; }
+.hd-color{ width:30px; height:30px; border-radius:50%; border:2px solid #fff;
+  box-shadow:0 0 0 1px var(--line); cursor:pointer; padding:0; }
+.hd-color.on{ box-shadow:0 0 0 2px var(--ink); }
+.hd-color-custom{ width:30px; height:30px; border:1px solid var(--line); border-radius:50%;
+  background:none; cursor:pointer; padding:0; }
+.hd-color-custom::-webkit-color-swatch-wrapper{ padding:2px; }
+.hd-color-custom::-webkit-color-swatch{ border:none; border-radius:50%; }

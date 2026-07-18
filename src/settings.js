@@ -3,6 +3,18 @@
 
 const KEY = "wg_settings";
 const PROFILE_KEY = "wg_profile";
+const HL_KEY = "wg_highlight";
+
+export const DEFAULT_HIGHLIGHT = "#1f9d55"; // 페이지 하이라이트 기본 색(초록)
+
+// 페이지에서 링크를 표시할 때 쓰는 색. 마이페이지에서 사용자가 바꿀 수 있음.
+export async function getHighlightColor() {
+  const o = await chrome.storage.local.get(HL_KEY);
+  return o[HL_KEY] || DEFAULT_HIGHLIGHT;
+}
+export async function saveHighlightColor(color) {
+  await chrome.storage.local.set({ [HL_KEY]: color });
+}
 
 export const DEFAULTS = {
   provider: "gemini",               // "gemini" | "openai"
