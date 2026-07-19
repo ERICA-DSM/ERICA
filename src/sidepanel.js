@@ -5,6 +5,17 @@ import { getProfile, saveProfile, clearProfile, getHighlightColor, saveHighlight
 const $ = (id) => document.getElementById(id);
 const LANGS = { "한국어": "ko", "영어": "en", "중국어": "zh", "베트남어": "vi" };
 
+// 사용자가 입력한 질문의 언어 감지 (영어로 물으면 영어로 답하도록). 애매하면 표시 언어로.
+function detectLang(text) {
+  const t = String(text || "");
+  if (/[가-힣]/.test(t)) return "한국어";                 // 한글
+  if (/[぀-ヿ]/.test(t)) return state.lang;               // 일본어 가나(미지원) → 표시언어
+  if (/[一-鿿]/.test(t)) return "중국어";                 // 한자(한글 없음)
+  if (/[ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ]/i.test(t)) return "베트남어";
+  if (/[a-z]/i.test(t)) return "영어";                            // 라틴 문자 → 영어
+  return state.lang;
+}
+
 // ---------- 상태 ----------
 const state = {
   lang: "한국어",
@@ -500,7 +511,8 @@ async function runGuide(goalText) {
     const page = await sendToContent(tab.id, { type: "WG_EXTRACT" });
     if (!page) throw new Error(m("readFail"));
     state.lastPage = { pageTitle: page.title, pageText: page.pageText, links: page.links, tabId: tab.id };
-    const out = await guide({ goal, lang: state.lang, pageTitle: page.title, pageText: page.pageText, links: page.links });
+    // 답변 언어 = 질문 언어(영어로 물으면 영어). 이후 표시언어 변경 시엔 재생성에서 state.lang 사용.
+    const out = await guide({ goal, lang: detectLang(goal), pageTitle: page.title, pageText: page.pageText, links: page.links });
     state.guideResult = { ...out, goal, pageTitle: page.title, tabId: tab.id };
     renderChatPage();
     await saveEntry({ type: "guide", title: goal, at: new Date().toISOString() });

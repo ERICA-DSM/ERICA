@@ -1,45 +1,58 @@
 // llm.js — 서버에서 우리 키로 Gemini/OpenAI를 호출 (확장에는 키가 없음)
 // 키가 없거나 MOCK=1 이면 목(mock) 응답을 돌려줘 키 없이도 전체 흐름을 데모할 수 있다.
 
+const LANG_NAME = { "한국어": "Korean (한국어)", "영어": "English", "중국어": "Chinese (中文)", "베트남어": "Vietnamese (Tiếng Việt)", ko: "Korean (한국어)", en: "English", zh: "Chinese (中文)", vi: "Vietnamese (Tiếng Việt)" };
+const langName = (l) => LANG_NAME[l] || l;
+
 const SYSTEM_PROMPT = (lang) => `당신은 한국 행정·생활 웹사이트를 처음 쓰는 외국인/다문화 가정을 돕는 안내자입니다.
+
+##### OUTPUT LANGUAGE (MOST IMPORTANT) #####
+You MUST write the summary, every steps.text, and every warnings entirely in ${langName(lang)}.
+Do NOT use any other language, even if the page title/content is in a different language.
+(단, 각 step의 label 값은 페이지에 있는 실제 버튼 텍스트이므로 원문 그대로 두세요.)
+############################################
 
 먼저 사용자의 목적(goal)을 정확히 파악하세요. 사용자가 무엇을 "하고 싶은지"(예: 접수 가능한 목록 보기,
 신청서 제출, 서류 발급, 조회 등)를 이해하고, 현재 페이지 내용을 바탕으로 그 목적을 끝까지 이루기 위한
 **전체 과정을 순서대로** 안내하세요. 한 단계만 알려주지 말고, 목적 달성까지 필요한 단계를 모두 적으세요.
 
 규칙:
-- **답변 언어는 사용자가 목적(goal)을 쓴 언어와 똑같이 맞추세요.** 영어로 물으면 영어로, 한국어면 한국어로,
-  중국어면 중국어로, 베트남어면 베트남어로 답합니다. 목적의 언어를 판단하기 어려우면 ${lang}로 답합니다.
-  단, label(페이지의 실제 버튼 텍스트)은 페이지에 있는 원문 그대로 두세요.
-- 쉬운 말로 설명하고, 어려운 행정용어는 풀어서 씁니다.
+- 위 OUTPUT LANGUAGE 규칙을 반드시 지킵니다(모든 문장을 ${langName(lang)}로).
+  쉬운 말로 설명하고, 어려운 행정용어는 풀어서 씁니다.
 - **지금 이 페이지에서 실제로 할 수 있는 단계**를 순서대로 구체적으로 담습니다(보통 1~5단계).
   버튼을 눌러 다른 페이지로 이동해야 하면, 그 "이동시키는 단계"까지만 안내하세요. 이동 후의 화면은
   지금 볼 수 없으므로 추측해서 지어내지 말고, 사용자가 이동한 뒤 그 화면에서 다시 이어서 안내받습니다.
 - steps에는 목적 달성까지의 단계를 순서대로 담습니다(보통 1~5단계).
-- **각 단계는 객체**입니다: text(그 단계에서 무엇을 하는지 사용자 질문과 같은 언어로 지시), label(그 단계에서 눌러야 할
+- **각 단계는 객체**입니다: text(그 단계에서 무엇을 하는지 ${langName(lang)}로 지시), label(그 단계에서 눌러야 할
   현재 페이지의 실제 버튼/링크 텍스트 — 링크 목록에서 label=official 우선, 있으면 그 text 그대로. 없으면 빈 문자열 ""),
   href(그 링크의 href, 없으면 "").
 - 광고/피싱/외부 상업 링크(label이 ad 또는 suspect)는 절대 단계 label로 쓰지 말고 warnings에 경고로 넣습니다.
 - 반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트 금지.
 
 {
-  "summary": "이 페이지가 무엇을 하는 곳인지, 그리고 사용자의 목적을 이룰 수 있는 곳인지 사용자 질문과 같은 언어로 2~3줄",
+  "summary": "이 페이지가 무엇을 하는 곳인지, 그리고 사용자의 목적을 이룰 수 있는 곳인지 ${langName(lang)}로 2~3줄",
   "steps": [
-    { "text": "사용자 질문과 같은 언어로 1단계 지시", "label": "이 단계에서 누를 페이지의 버튼/링크 텍스트 또는 \"\"", "href": "링크 href 또는 \"\"" },
+    { "text": "${langName(lang)}로 1단계 지시", "label": "이 단계에서 누를 페이지의 버튼/링크 텍스트 또는 \"\"", "href": "링크 href 또는 \"\"" },
     { "text": "2단계 지시", "label": "...", "href": "..." }
   ],
-  "warnings": ["사용자 질문과 같은 언어로 무시해야 할 광고/의심 요소 설명"]
+  "warnings": ["${langName(lang)}로 무시해야 할 광고/의심 요소 설명"]
 }`;
 
 const SUMMARY_PROMPT = (lang) => `당신은 한국 행정·생활 웹페이지를 외국인/다문화 가정에게 쉽게 요약해 주는 도우미입니다.
-현재 페이지의 핵심을 ${lang} 언어로, 아주 쉬운 말로 요약하세요. 반드시 아래 JSON 형식으로만 답하세요.
+
+##### OUTPUT LANGUAGE (MOST IMPORTANT) #####
+You MUST write the summary and every bullet entirely in ${langName(lang)}.
+Do NOT use any other language, even if the page content is in a different language.
+############################################
+
+현재 페이지의 핵심을 아주 쉬운 말로 요약하세요. 반드시 아래 JSON 형식으로만 답하세요.
 
 {
-  "summary": "이 페이지가 무엇을 하는 곳인지 ${lang}로 2~3줄",
-  "bullets": ["${lang}로 핵심 요점 1", "요점 2", "요점 3 (3~5개)"]
+  "summary": "이 페이지가 무엇을 하는 곳인지 ${langName(lang)}로 2~3줄",
+  "bullets": ["${langName(lang)}로 핵심 요점 1", "요점 2", "요점 3 (3~5개)"]
 }`;
 
-function buildUserPrompt({ goal, pageTitle, pageText, links }) {
+function buildUserPrompt({ goal, pageTitle, pageText, links, lang }) {
   const linkList = (links || [])
     .map((l, i) => `${i + 1}. [${l.label}] "${l.text}" -> ${l.href}`)
     .join("\n");
@@ -51,7 +64,10 @@ function buildUserPrompt({ goal, pageTitle, pageText, links }) {
 ${pageText}
 
 현재 페이지의 링크 목록(label = official/normal/ad/suspect):
-${linkList}`;
+${linkList}
+
+=== REPLY LANGUAGE (STRICT) ===
+Write summary, all steps.text, and warnings ONLY in ${langName(lang)}. The page is Korean, but you MUST still answer in ${langName(lang)}. (Keep each step's "label" as the original page text.)`;
 }
 
 function safeParseJson(text) {
