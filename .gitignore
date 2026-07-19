@@ -6,3 +6,6 @@ src/config.js
 Thumbs.db
 node_modules/
 *.log
+
+# 테스트 하네스/임시 스크립트
+src/_*

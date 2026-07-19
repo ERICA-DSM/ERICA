@@ -3,69 +3,211 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>웹 길잡이</title>
+  <title>Ask me! · 다문화 웹 길잡이</title>
   <link rel="stylesheet" href="sidepanel.css" />
 </head>
 <body>
-  <header class="wg-head">
-    <div class="wg-head-row">
-      <div class="wg-logo">🧭 웹 길잡이</div>
-      <button id="settings-toggle" class="wg-gear" title="설정">⚙</button>
-    </div>
-    <div class="wg-sub">목적을 말하면, 다음 한 걸음을 안내해요</div>
-  </header>
 
-  <!-- 첫 실행: API 키 안내 배너 -->
-  <div id="key-banner" class="wg-banner" hidden>
-    시작하려면 <b>AI API 키</b>가 필요해요. 아래 설정에서 키를 넣어 주세요.
+<!-- ============ 로그인 화면 (authed=false) ============ -->
+<section id="view-login" class="hd-login" hidden>
+  <div class="hd-login-top">
+    <div class="hd-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.5 9.5h.01"></path><path d="M15.5 9.5h.01"></path><path d="M8 14.5a5 5 0 0 0 8 0"></path>
+      </svg>
+    </div>
+    <div class="hd-wordmark">Ask me!</div>
+    <div class="hd-tagline" id="login-tagline">한국 생활, 쉽게. 제가 한 걸음씩 도와드릴게요.</div>
   </div>
 
-  <!-- 설정 패널 (기본 숨김) -->
-  <section id="settings" class="wg-settings" hidden>
-    <label class="wg-label">AI 제공자 / Provider</label>
-    <select id="provider" class="wg-select">
-      <option value="gemini">Google Gemini (무료 할당량)</option>
-      <option value="openai">OpenAI</option>
-    </select>
-
-    <div id="gemini-fields">
-      <label class="wg-label">Gemini API 키</label>
-      <input id="geminiApiKey" class="wg-input" type="password" placeholder="AIza… (Google AI Studio에서 발급)" autocomplete="off" />
-      <label class="wg-label">Gemini 모델</label>
-      <input id="geminiModel" class="wg-input" type="text" placeholder="gemini-2.0-flash" />
-      <a class="wg-help" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">→ Gemini 키 발급받기</a>
+  <div class="hd-login-bottom">
+    <div class="hd-field-label" id="lbl-lang">언어 / Language</div>
+    <div class="hd-langs" id="login-langs">
+      <button class="hd-chip" data-lang="한국어">한국어</button>
+      <button class="hd-chip" data-lang="영어">English</button>
+      <button class="hd-chip" data-lang="중국어">中文</button>
+      <button class="hd-chip" data-lang="베트남어">Tiếng Việt</button>
     </div>
 
-    <div id="openai-fields" hidden>
-      <label class="wg-label">OpenAI API 키</label>
-      <input id="openaiApiKey" class="wg-input" type="password" placeholder="sk-…" autocomplete="off" />
-      <label class="wg-label">OpenAI 모델</label>
-      <input id="openaiModel" class="wg-input" type="text" placeholder="gpt-4o-mini" />
+    <div class="hd-field-label" id="lbl-name">이름 / Name</div>
+    <input id="login-name" class="hd-input" type="text" placeholder="예: Nguyen" autocomplete="off" />
+
+    <div class="hd-field-label" id="lbl-email">이메일 / Email</div>
+    <input id="login-email" class="hd-input" type="email" placeholder="nguyen@example.com" autocomplete="off" />
+
+    <div class="hd-field-label" id="lbl-plan">플랜 / Plan</div>
+    <div class="hd-plan2" id="login-plans">
+      <button data-plan="gemini"><span class="p-name">무료 · Gemini</span><span class="p-sub">low usage</span></button>
+      <button data-plan="openai"><span class="p-name">유료 · ChatGPT</span><span class="p-sub">high usage</span></button>
     </div>
 
-    <button id="save-settings" class="wg-btn wg-btn-sm">설정 저장</button>
-    <div id="settings-status" class="wg-status"></div>
-  </section>
+    <div id="login-err" class="hd-err"></div>
+    <button id="login-btn" class="hd-btn">로그인</button>
+    <button id="guest-btn" class="hd-btn-ghost">로그인 없이 둘러보기</button>
+  </div>
+</section>
 
-  <section class="wg-form">
-    <label class="wg-label">언어 / Language</label>
-    <select id="lang" class="wg-select">
-      <option value="베트남어">🇻🇳 Tiếng Việt (베트남어)</option>
-      <option value="영어">🇺🇸 English (영어)</option>
-      <option value="중국어">🇨🇳 中文 (중국어)</option>
-      <option value="한국어">🇰🇷 한국어</option>
-    </select>
+<!-- ============ 앱 (authed=true) ============ -->
+<section id="view-app" class="hd-app" hidden>
+  <!-- 헤더 -->
+  <header class="hd-header">
+    <div class="hd-header-row">
+      <button class="hd-brand" id="brand-btn" title="홈">
+        <span class="mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 9.5h.01"></path><path d="M15.5 9.5h.01"></path><path d="M8 14.5a5 5 0 0 0 8 0"></path>
+          </svg>
+        </span>
+        <span class="wm">Ask me!</span>
+      </button>
+      <div class="hd-langs-sm" id="app-langs">
+        <button data-lang="한국어">한</button>
+        <button data-lang="영어">EN</button>
+        <button data-lang="중국어">中</button>
+        <button data-lang="베트남어">VI</button>
+      </div>
+    </div>
+    <div class="hd-site">
+      <span class="hd-site-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 9.5h.01"></path><path d="M15.5 9.5h.01"></path><path d="M8 14.5a5 5 0 0 0 8 0"></path></svg>
+      </span>
+      <div class="hd-site-info">
+        <span class="name" id="site-name">현재 사이트</span>
+        <span class="url" id="site-url">—</span>
+      </div>
+    </div>
+  </header>
 
-    <label class="wg-label">무엇을 하고 싶으세요?</label>
-    <textarea id="goal" class="wg-textarea" rows="3"
-      placeholder="예: 자녀 학비 지원을 신청하고 싶어요"></textarea>
+  <!-- 콘텐츠 (탭별 교체) -->
+  <div class="hd-content">
+    <!-- 홈 -->
+    <div id="tab-home" class="hd-home">
+      <div class="hd-hero">
+        <h2 id="hero-title">무엇을 도와드릴까요?</h2>
+        <p id="hero-sub">하고 싶은 일을 적어 주세요</p>
+        <div class="hd-hero-row">
+          <input id="hero-input" type="text" placeholder="예: 등본을 발급받고 싶어요" />
+          <button id="hero-send" class="hd-hero-send" title="보내기">➜</button>
+        </div>
+      </div>
 
-    <button id="run" class="wg-btn">안내받기</button>
-  </section>
+      <div class="hd-sec-head"><h3 id="feat-title">기능</h3><span id="feat-sub">필요한 것만 켜세요</span></div>
 
-  <section id="result" class="wg-result" hidden></section>
-  <div id="status" class="wg-status"></div>
+      <div class="hd-group">
+        <div class="hd-group-label"><b>SAFETY</b><i></i></div>
+        <div class="hd-card">
+          <div class="hd-feat">
+            <div class="ic"><span class="em">🛡️</span></div>
+            <div class="txt"><b id="f-filter">광고성 글 필터링</b><small id="f-filter-d">광고를 박스로 가리고 "광고·AD"로 표시해요</small></div>
+            <button class="hd-toggle" data-feat="filter"><span class="dot"></span><span class="lbl">OFF</span></button>
+          </div>
+        </div>
+      </div>
 
-  <script type="module" src="sidepanel.js"></script>
+      <div class="hd-group">
+        <div class="hd-group-label"><b>UNDERSTAND</b><i></i></div>
+        <div class="hd-card">
+          <div class="hd-feat">
+            <div class="ic"><span class="em">📝</span></div>
+            <div class="txt"><b id="f-sum">요약</b><small id="f-sum-d">현재 화면을 대화창에 요약해요</small></div>
+            <button class="hd-featbtn" id="btn-summarize">요약하기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hd-group">
+        <div class="hd-group-label"><b>HISTORY</b><i></i></div>
+        <div class="hd-card">
+          <div class="hd-feat">
+            <div class="ic"><span class="em">🕙</span></div>
+            <div class="txt"><b id="f-rec">화면 기록</b><small id="f-rec-d">지금 화면을 캡처해 보관함에 저장해요</small></div>
+            <button class="hd-featbtn" id="btn-capture">캡처</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 대화 -->
+    <div id="tab-chat" class="hd-chat" hidden></div>
+
+    <!-- 요약 -->
+    <div id="tab-sum" class="hd-sum" hidden></div>
+
+    <!-- 보관함 -->
+    <div id="tab-save" class="hd-save" hidden></div>
+
+    <!-- 마이페이지 -->
+    <div id="tab-my" class="hd-my" hidden>
+      <div class="hd-prof">
+        <div class="hd-avatar" id="my-avatar">N</div>
+        <div>
+          <div class="pn" id="my-name">—</div>
+          <div class="ps" id="my-sub">—</div>
+        </div>
+      </div>
+
+      <div class="hd-my-label" id="my-lang-label">표시 언어 / Language</div>
+      <div class="hd-langs" id="my-langs">
+        <button class="hd-chip" data-lang="한국어">한국어</button>
+        <button class="hd-chip" data-lang="영어">English</button>
+        <button class="hd-chip" data-lang="중국어">中文</button>
+        <button class="hd-chip" data-lang="베트남어">Tiếng Việt</button>
+      </div>
+
+      <div class="hd-my-label" id="my-plan-label">플랜 / Plan</div>
+      <div class="hd-plan2" id="my-plans">
+        <button data-plan="gemini"><span class="p-name">무료 · Gemini</span><span class="p-sub" id="my-free-usage">low usage</span></button>
+        <button data-plan="openai"><span class="p-name">유료 · ChatGPT</span><span class="p-sub" id="my-paid-usage">high usage</span></button>
+      </div>
+
+      <div class="hd-my-label" id="my-color-label">표시 색상 / Highlight</div>
+      <div class="hd-colors" id="my-colors">
+        <button class="hd-color" data-color="#1f9d55" style="background:#1f9d55" title="초록"></button>
+        <button class="hd-color" data-color="#2563c9" style="background:#2563c9" title="파랑"></button>
+        <button class="hd-color" data-color="#e0651a" style="background:#e0651a" title="주황"></button>
+        <button class="hd-color" data-color="#c0392b" style="background:#c0392b" title="빨강"></button>
+        <button class="hd-color" data-color="#7c3aed" style="background:#7c3aed" title="보라"></button>
+        <input type="color" id="my-color-custom" class="hd-color-custom" title="직접 선택" />
+      </div>
+
+      <div class="hd-setcard">
+        <div class="hd-setrow"><span id="set-usage-l">오늘 사용량</span><span class="val" id="set-usage">—</span></div>
+        <div class="hd-setrow clickable" id="row-help"><span id="set-help">도움말</span><span class="val">›</span></div>
+        <div class="hd-setrow clickable" id="row-privacy"><span id="set-privacy">개인정보</span><span class="val">›</span></div>
+      </div>
+
+      <button id="logout-btn" class="hd-outline" style="margin-top:14px;">로그아웃</button>
+    </div>
+  </div>
+
+  <div id="status" class="hd-status"></div>
+
+  <!-- 하단 탭바 (5개: 홈/대화/요약/보관/마이) -->
+  <nav class="hd-tabbar">
+    <button class="hd-tab" data-tab="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5"></path><path d="M6 10.5V19h12v-8.5"></path></svg>
+      <span id="tabl-home">홈</span>
+    </button>
+    <button class="hd-tab" data-tab="chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z"></path></svg>
+      <span id="tabl-chat">대화 내용</span>
+    </button>
+    <button class="hd-tab" data-tab="sum">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v4h4"></path><path d="M10 12h5M10 16h5"></path></svg>
+      <span id="tabl-sum">요약본</span>
+    </button>
+    <button class="hd-tab" data-tab="save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v16l-6-3.5L6 20z"></path></svg>
+      <span id="tabl-save">보관함</span>
+    </button>
+    <button class="hd-tab" data-tab="my">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 20a6.5 6.5 0 0 1 13 0"></path></svg>
+      <span id="tabl-my">마이페이지</span>
+    </button>
+  </nav>
+</section>
+
+<script type="module" src="sidepanel.js"></script>
 </body>
 </html>

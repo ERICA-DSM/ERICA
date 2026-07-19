@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Geist', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #0a0a0a; }
+  a { color: #0a0a0a; text-decoration: none; }
+  a:hover { color: #525252; }
+  input { font-family: inherit; }
+  input::placeholder { color: #a3a3a3; }
+  .om-scroll::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</helmet>
+
+<div style="min-height: 100%; padding: 44px; background: #f4f4f5; background-image: radial-gradient(#e2e2e2 1px, transparent 1px); background-size: 22px 22px; display: flex; justify-content: center; align-items: flex-start;">
+  <div style="width: 390px; height: 800px; background: #fff; border: 1px solid #e6e6e6; border-radius: 18px; box-shadow: 0 20px 60px -24px rgba(0,0,0,.28); overflow: hidden; display: flex; flex-direction: column;">
+
+    <!-- mock chrome bar -->
+    <div style="height: 38px; flex: none; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px;">
+      <span style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #a3a3a3;">SIDE PANEL</span>
+      <span style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: #a3a3a3; font-size: 16px;">×</span>
+    </div>
+
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1; display: flex; flex-direction: column; padding: 30px 24px 26px; text-align: center;">
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;">
+            <span style="width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;"><svg width="72" height="72" viewBox="0 0 24 24"><path d="M5 3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-7.5L6 21.5V17H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z" fill="#0a0a0a"></path><path d="M8.7 8.4h.01" stroke="#fff" stroke-width="2.4" stroke-linecap="round"></path><path d="M15.3 8.4h.01" stroke="#fff" stroke-width="2.4" stroke-linecap="round"></path><path d="M8.7 10.8a3.6 3.6 0 0 0 6.6 0" stroke="#fff" stroke-width="1.9" stroke-linecap="round" fill="none"></path></svg></span>
+            <div style="font-size: 27px; font-weight: 700; letter-spacing: -.02em;">Hi&nbsp;:D</div>
+            <div style="font-size: 13.5px; color: #737373; line-height: 1.55; max-width: 250px; margin-top: 2px;">{{ loginTagline }}</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; color: #a3a3a3; margin-bottom: 8px; text-align: left;">{{ langSettingLabel }}</div>
+            <div style="display: flex; gap: 6px; margin-bottom: 18px;">
+              <sc-for list="{{ langChips }}" as="c" hint-placeholder-count="4">
+                <button onClick="{{ c.onClick }}" style="{{ c.bigStyle }}">{{ c.full }}</button>
+              </sc-for>
+            </div>
+            <button onClick="{{ login }}" style="width: 100%; height: 50px; background: #0a0a0a; color: #fff; border: none; border-radius: 12px; font-size: 14.5px; font-weight: 600; cursor: pointer;">{{ loginLabel }}</button>
+            <button onClick="{{ guest }}" style="width: 100%; height: 42px; margin-top: 8px; background: none; color: #737373; border: none; font-size: 13px; cursor: pointer;">{{ guestLabel }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAuthed }}" hint-placeholder-val="{{ true }}">
+      <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+    <!-- header -->
+    <div style="flex: none; padding: 16px 16px 12px; border-bottom: 1px solid #f2f2f2;">
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <button onClick="{{ goHome }}" style="display: flex; align-items: center; gap: 9px; background: none; border: none; padding: 0; cursor: pointer;">
+          <span style="width: 32px; height: 32px; flex: none; display: flex; align-items: center; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24"><path d="M5 3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-7.5L6 21.5V17H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z" fill="#0a0a0a"></path><path d="M8.7 8.4h.01" stroke="#fff" stroke-width="2.4" stroke-linecap="round"></path><path d="M15.3 8.4h.01" stroke="#fff" stroke-width="2.4" stroke-linecap="round"></path><path d="M8.7 10.8a3.6 3.6 0 0 0 6.6 0" stroke="#fff" stroke-width="1.9" stroke-linecap="round" fill="none"></path></svg></span>
+          <span style="font-size: 18.5px; font-weight: 700; letter-spacing: -.02em; white-space: nowrap;">Hi&nbsp;:D</span>
+        </button>
+        <div style="margin-left: auto; display: flex; gap: 4px;">
+          <sc-for list="{{ langChips }}" as="c" hint-placeholder-count="4">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="margin-top: 11px; display: flex; align-items: center; gap: 9px; background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 8px 10px;">
+        <div style="min-width: 0; flex: 1;">
+          <div style="font-size: 12.5px; font-weight: 600; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ siteName }}</div>
+          <div style="font-family: 'Geist Mono', monospace; font-size: 10px; color: #a3a3a3; margin-top: 2px;">{{ siteUrl }}</div>
+        </div>
+        <span style="flex: none; font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: .08em; color: #b0b0b0;">{{ currentSiteLabel }}</span>
+      </div>
+    </div>
+
+    <!-- content -->
+    <div class="om-scroll" style="flex: 1; overflow-y: auto;">
+
+      <!-- ============ HOME (기능) ============ -->
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+        <div style="padding: 18px 16px 24px;">
+          <div style="background: #0a0a0a; border-radius: 14px; padding: 16px; color: #fff;">
+            <div style="font-size: 15.5px; font-weight: 600;">{{ helpText }}</div>
+            <div style="font-size: 12.5px; color: #a3a3a3; margin-top: 3px;">{{ helpSub }}</div>
+            <div style="position: relative; margin-top: 12px;">
+              <input value="{{ query }}" onInput="{{ onQueryInput }}" onKeyDown="{{ onQueryKey }}" placeholder="{{ askPlaceholder }}" style="width: 100%; height: 46px; padding: 0 50px 0 14px; border: none; border-radius: 11px; font-size: 13.5px; outline: none; background: #fff; color: #0a0a0a;" />
+              <button onClick="{{ submitGoal }}" aria-label="send" style="position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; background: #0a0a0a; color: #fff; border: none; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer;">➜</button>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin: 20px 0 10px;">
+            <span style="font-size: 14px; font-weight: 600;">{{ featTitle }}</span>
+            <span style="font-size: 12px; color: #a3a3a3;">{{ featSub }}</span>
+          </div>
+
+          <sc-for list="{{ featGroups }}" as="g" hint-placeholder-count="3">
+            <div style="margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: .06em; color: #737373;">{{ g.label }}</span>
+                <span style="flex: 1; height: 1px; background: #ededed;"></span>
+              </div>
+              <div style="border: 1px solid #ededed; border-radius: 14px; overflow: hidden;">
+                <sc-for list="{{ g.items }}" as="item" hint-placeholder-count="2">
+                  <div style="{{ item.rowStyle }}">
+                    <span style="flex: none; width: 44px; height: 44px; border-radius: 11px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; filter: grayscale(1);">{{ item.mark }}</span>
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="font-size: 14.5px; font-weight: 600;">{{ item.name }}</div>
+                      <div style="font-size: 12px; color: #8a8a8a; margin-top: 2px; line-height: 1.4;">{{ item.desc }}</div>
+                    </div>
+                    <button onClick="{{ item.toggle }}" style="{{ item.pillStyle }}"><span style="{{ item.pillDotStyle }}"></span>{{ item.onLabel }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+
+          <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px; background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 10px 12px;">
+            <span style="width: 18px; height: 18px; flex: none; border: 1.5px solid #0a0a0a; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</span>
+            <span style="font-size: 12.5px; color: #525252;">{{ safetyText }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ 대화 내용 ============ -->
+      <sc-if value="{{ isChat }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 16px 16px 20px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 9px 12px;">
+            <span style="width: 18px; height: 18px; flex: none; border: 1.5px solid #0a0a0a; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</span>
+            <span style="font-size: 12.5px; color: #525252;">{{ safetyText }}</span>
+          </div>
+
+          <sc-if value="{{ hasGoal }}" hint-placeholder-val="{{ false }}">
+            <div style="border: 1px solid #ededed; border-radius: 12px; padding: 11px 13px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-family: 'Geist Mono', monospace; font-size: 10.5px; letter-spacing: .06em; color: #737373;">{{ progressLabel }}</span>
+                <span style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #0a0a0a; font-weight: 500;">{{ progressStep }}</span>
+              </div>
+              <div style="height: 6px; border-radius: 999px; background: #f0f0f0; overflow: hidden;">
+                <div style="{{ progressBarStyle }}"></div>
+              </div>
+            </div>
+            <sc-for list="{{ chatMsgs }}" as="m" hint-placeholder-count="3">
+              <div style="{{ m.wrapStyle }}">
+                <div style="{{ m.bubbleStyle }}">
+                  <sc-if value="{{ m.isStep }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 7px;">
+                      <span style="width: 20px; height: 20px; flex: none; background: #0a0a0a; color: #fff; border-radius: 6px; font-family: 'Geist Mono', monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">{{ m.num }}</span>
+                      <span style="font-family: 'Geist Mono', monospace; font-size: 10.5px; letter-spacing: .06em; color: #a3a3a3;">{{ stepWord }} {{ m.num }}/4</span>
+                    </div>
+                    <div style="font-size: 13.5px; font-weight: 600; line-height: 1.45;">{{ m.text }}</div>
+                    <div style="margin-top: 10px; padding: 10px; border: 1px dashed #d4d4d4; border-radius: 10px; background: #fafafa;">
+                      <div style="font-size: 10.5px; color: #a3a3a3; margin-bottom: 6px;">{{ pressLabel }}</div>
+                      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 2px solid #0a0a0a; border-radius: 9px; background: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 0 0 4px rgba(10,10,10,.07);">▸ {{ m.label }}</span>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ m.isPlain }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-size: 13.5px; line-height: 1.5;">{{ m.text }}</span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+            <button onClick="{{ chatAction.onClick }}" style="align-self: flex-start; margin-top: 4px; height: 44px; padding: 0 20px; background: #0a0a0a; color: #fff; border: none; border-radius: 999px; font-size: 13.5px; font-weight: 600; cursor: pointer;">{{ chatAction.label }}</button>
+          </sc-if>
+
+          <sc-if value="{{ notGoal }}" hint-placeholder-val="{{ true }}">
+            <div style="padding: 8px 2px 2px;">
+              <div style="font-size: 16.5px; font-weight: 600;">{{ helpText }}</div>
+              <div style="font-size: 13px; color: #737373; margin-top: 5px; line-height: 1.5;">{{ chatSub }}</div>
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+                <sc-for list="{{ chatSuggestions }}" as="s" hint-placeholder-count="3">
+                  <button onClick="{{ s.onClick }}" style="display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 14px; border: 1px solid #e6e6e6; background: #fff; border-radius: 12px; font-size: 13.5px; font-weight: 500; cursor: pointer;"><span style="font-size: 15px; color: #a3a3a3;">+</span>{{ s.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="position: relative; margin-top: 6px;">
+            <input value="{{ query }}" onInput="{{ onQueryInput }}" onKeyDown="{{ onQueryKey }}" placeholder="{{ askPlaceholder }}" style="width: 100%; height: 46px; padding: 0 50px 0 14px; border: 1px solid #e6e6e6; border-radius: 12px; font-size: 13.5px; outline: none;" />
+            <button onClick="{{ submitGoal }}" aria-label="send" style="position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; background: #0a0a0a; color: #fff; border: none; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer;">➜</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ 요약본 ============ -->
+      <sc-if value="{{ isSum }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 18px 16px 24px;">
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #a3a3a3;">{{ sumTag }}</div>
+          <div style="font-size: 16px; font-weight: 600; margin-top: 4px;">{{ pageTitle }}</div>
+          <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{ sumBullets }}" as="b" hint-placeholder-count="3">
+              <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="flex: none; width: 20px; height: 20px; border-radius: 50%; background: #0a0a0a; color: #fff; font-family: 'Geist Mono', monospace; font-size: 11px; display: flex; align-items: center; justify-content: center; margin-top: 1px;">{{ b.n }}</span>
+                <span style="font-size: 13.5px; line-height: 1.5; color: #262626;">{{ b.t }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <button style="margin-top: 18px; width: 100%; height: 42px; border: 1px solid #e6e6e6; background: #fff; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer;">{{ sourceLabel }}</button>
+        </div>
+      </sc-if>
+
+      <!-- ============ 보관함 ============ -->
+      <sc-if value="{{ isSave }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 18px 16px 24px;">
+          <sc-for list="{{ saved }}" as="s" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f4f4f4;">
+              <span style="flex: none; width: 38px; height: 38px; border: 1px solid #ededed; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; filter: grayscale(1);">{{ s.mark }}</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="{{ s.chipStyle }}">{{ s.type }}</span>
+                  <span style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #b4b4b4;">{{ s.date }}</span>
+                </div>
+                <div style="font-size: 13.5px; font-weight: 500; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ s.title }}</div>
+              </div>
+              <span style="color: #c4c4c4; font-size: 16px;">›</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ============ 마이페이지 ============ -->
+      <sc-if value="{{ isMy }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 18px 16px 24px;">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 4px 2px 18px;">
+            <span style="width: 48px; height: 48px; border-radius: 14px; background: #0a0a0a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600;">N</span>
+            <div>
+              <div style="font-size: 15px; font-weight: 600;">Nguyen T.</div>
+              <div style="font-size: 12.5px; color: #8a8a8a; margin-top: 2px;">{{ myLangLine }}</div>
+            </div>
+          </div>
+          <div style="font-size: 12px; color: #a3a3a3; margin-bottom: 8px;">{{ langSettingLabel }}</div>
+          <div style="display: flex; gap: 6px; margin-bottom: 18px;">
+            <sc-for list="{{ langChips }}" as="c" hint-placeholder-count="4">
+              <button onClick="{{ c.onClick }}" style="{{ c.bigStyle }}">{{ c.full }}</button>
+            </sc-for>
+          </div>
+          <div style="border: 1px solid #ededed; border-radius: 14px; overflow: hidden;">
+            <sc-for list="{{ myRows }}" as="r" hint-placeholder-count="3">
+              <div style="{{ r.rowStyle }}">
+                <span style="font-size: 13.5px;">{{ r.label }}</span>
+                <span style="margin-left: auto; font-size: 12.5px; color: #a3a3a3;">{{ r.value }}</span>
+                <span style="color: #c4c4c4; font-size: 15px; margin-left: 8px;">›</span>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ logout }}" style="width: 100%; height: 46px; margin-top: 16px; border: 1px solid #e6e6e6; background: #fff; border-radius: 11px; font-size: 13.5px; font-weight: 500; color: #525252; cursor: pointer;">{{ logoutLabel }}</button>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <!-- bottom tab bar -->
+    <div style="flex: none; height: 60px; border-top: 1px solid #ededed; background: #fff; display: flex;">
+      <button onClick="{{ onHome }}" style="{{ tHome }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M4 11.5 12 5l8 6.5"></path><path d="M6 10.5V19h12v-8.5"></path></svg>
+        <span style="font-size: 10px; white-space: nowrap;">홈</span>
+      </button>
+      <button onClick="{{ onChat }}" style="{{ tChat }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z"></path></svg>
+        <span style="font-size: 10px; white-space: nowrap;">대화 내용</span>
+      </button>
+      <button onClick="{{ onSum }}" style="{{ tSum }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v4h4"></path><path d="M10 12h5M10 16h5"></path></svg>
+        <span style="font-size: 10px; white-space: nowrap;">요약본</span>
+      </button>
+      <button onClick="{{ onSave }}" style="{{ tSave }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M6 4h12v16l-6-3.5L6 20z"></path></svg>
+        <span style="font-size: 10px; white-space: nowrap;">보관함</span>
+      </button>
+      <button onClick="{{ onMy }}" style="{{ tMy }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 20a6.5 6.5 0 0 1 13 0"></path></svg>
+        <span style="font-size: 10px; white-space: nowrap;">마이페이지</span>
+      </button>
+    </div>
+      </div>
+      </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    lang: 'en',
+    authed: false,
+    tab: 'home',
+    query: '',
+    userGoal: null,
+    on: { filter: true, trans: true, sum: false, rec: false },
+    cstep: 1,
+    cdone: false
+  };
+
+  catDefs = [
+    { id: 'safe', label: { ko: '안전', en: 'Safety', zh: '安全', vi: 'An toàn' } },
+    { id: 'understand', label: { ko: '이해 돕기', en: 'Understand', zh: '理解', vi: 'Hiểu' } },
+    { id: 'record', label: { ko: '기록', en: 'History', zh: '记录', vi: 'Ghi lại' } }
+  ];
+
+  suggDefs = [
+    { ko: '등본·서류 발급받기', en: 'Get a document or certificate', zh: '开具证明或文件', vi: 'Xin giấy tờ / chứng nhận' },
+    { ko: '이 페이지 번역하기', en: 'Translate this page', zh: '翻译此页面', vi: 'Dịch trang này' },
+    { ko: '이 페이지 요약하기', en: 'Summarize this page', zh: '总结此页面', vi: 'Tóm tắt trang này' }
+  ];
+
+  langs = [
+    { id: 'ko', label: '한', full: '한국어' },
+    { id: 'en', label: 'EN', full: 'English' },
+    { id: 'zh', label: '中', full: '中文' },
+    { id: 'vi', label: 'VI', full: 'Tiếng Việt' }
+  ];
+
+  UI = {
+    goal:      { ko: '주민등록등본 발급받기', en: 'Get a residence certificate', zh: '开具居民登记誊本', vi: 'Xin giấy chứng nhận cư trú' },
+    help:      { ko: '무엇을 도와드릴까요?', en: 'How can I help you?', zh: '需要什么帮助?', vi: 'Tôi giúp gì được cho bạn?' },
+    helpSub:   { ko: '하고 싶은 일을 적어 주세요', en: 'Tell me what you want to do', zh: '请告诉我您想做什么', vi: 'Hãy cho biết bạn muốn làm gì' },
+    ask:       { ko: '길 안내 받기', en: 'Get guidance', zh: '获取指引', vi: 'Nhận hướng dẫn' },
+    featTitle: { ko: '기능', en: 'Features', zh: '功能', vi: 'Tính năng' },
+    featSub:   { ko: '필요한 것만 켜세요', en: 'Turn on what you need', zh: '按需开启', vi: 'Bật thứ bạn cần' },
+    on:        { ko: '켜짐', en: 'On', zh: '开', vi: 'Bật' },
+    off:       { ko: '꺼짐', en: 'Off', zh: '关', vi: 'Tắt' },
+    safety:    { ko: '이 페이지에서 광고·의심 링크 2개를 가렸어요', en: 'Hid 2 ad / scam links on this page', zh: '已隐藏此页面 2 个广告/可疑链接', vi: 'Đã ẩn 2 liên kết quảng cáo/lừa đảo' },
+    intro:     { ko: '네! 4단계로 안내할게요.', en: 'Sure! I will guide you in 4 steps.', zh: '好的!我分 4 步引导您。', vi: 'Được! Tôi sẽ hướng dẫn 4 bước.' },
+    press:     { ko: '화면에서 이 버튼을 누르세요', en: 'Press this button on the page', zh: '在页面上点击此按钮', vi: 'Nhấn nút này trên trang' },
+    stepWord:  { ko: '단계', en: 'STEP', zh: '步骤', vi: 'BƯỚC' },
+    next:      { ko: '다 했어요, 다음', en: 'Done, next', zh: '完成,下一步', vi: 'Xong, tiếp theo' },
+    finish:    { ko: '완료', en: 'Finish', zh: '完成', vi: 'Hoàn tất' },
+    doneMsg:   { ko: '끝났어요! 잘하셨어요.', en: 'All done! Great job.', zh: '全部完成!做得好。', vi: 'Xong hết! Làm tốt lắm.' },
+    restart:   { ko: '처음부터', en: 'Start over', zh: '重新开始', vi: 'Làm lại' },
+    askPh:     { ko: '예: 등본 떼고 싶어요', en: 'e.g. I need a certificate', zh: '例:我要开证明', vi: 'vd: Tôi cần giấy tờ' },
+    sumTag:    { ko: '이 페이지 요약', en: 'PAGE SUMMARY', zh: '页面摘要', vi: 'TÓM TẮT TRANG' },
+    source:    { ko: '원문 페이지 보기', en: 'View original page', zh: '查看原始页面', vi: 'Xem trang gốc' },
+    langSet:   { ko: '표시 언어', en: 'Display language', zh: '显示语言', vi: 'Ngôn ngữ hiển thị' },
+    myLang:    { ko: '사용 언어 · English', en: 'Language · English', zh: '语言 · English', vi: 'Ngôn ngữ · English' },
+    site:      { ko: '현재 사이트', en: 'CURRENT SITE', zh: '当前网站', vi: 'TRANG NÀY' },
+    pageTitle: { ko: '주민등록표 등본(초본) 발급', en: 'Issue residence certificate', zh: '开具居民登记誊本', vi: 'Cấp giấy chứng nhận cư trú' },
+    loginTagline: { ko: '한국 생활, 어렵지 않아요. 제가 옆에서 한 걸읍씩 도와드릴게요.', en: 'Life in Korea, made simple. I will help you, one step at a time.', zh: '在韩生活不再难，我会一步步帮您。', vi: 'Cuộc sống ở Hàn dễ hơn — tôi sẽ giúp bạn từng bước.' },
+    loginLabel:   { ko: '로그인', en: 'Log in', zh: '登录', vi: 'Đăng nhập' },
+    guestLabel:   { ko: '로그인 없이 둘러보기', en: 'Continue as guest', zh: '以访客身份浏览', vi: 'Tiếp tục với tư cách khách' },
+    logoutLabel:  { ko: '로그아웃', en: 'Log out', zh: '退出登录', vi: 'Đăng xuất' },
+    progress:     { ko: '진행 상황', en: 'Progress', zh: '进度', vi: 'Tiến độ' },
+    chatSub:      { ko: '아래에서 고르거나, 하고 싶은 일을 직접 적어 주세요.', en: 'Pick one below, or type what you want to do.', zh: '在下方选择，或直接输入您想做的事。', vi: 'Chọn bên dưới, hoặc nhập việc bạn muốn làm.' }
+  };
+
+  steps = [
+    { label: '검색', t: { ko: "검색창에 '주민등록등본'을 입력하세요", en: 'Type "resident registration" in the search box', zh: '在搜索框输入"居民登记誊本"', vi: 'Nhập "đăng ký cư trú" vào ô tìm kiếm' } },
+    { label: '발급하기', t: { ko: "'주민등록표 등본 발급'을 선택하세요", en: 'Select "Issue residence certificate"', zh: '选择"开具居民登记誊本"', vi: 'Chọn "Cấp giấy chứng nhận cư trú"' } },
+    { label: '간편인증', t: { ko: "로그인은 '간편인증'을 누르세요", en: 'Tap "Simple Auth" to log in', zh: '登录请点击"简易认证"', vi: 'Nhấn "Xác thực đơn giản" để đăng nhập' } },
+    { label: '신청', t: { ko: "주소를 확인하고 '신청'을 누르세요", en: 'Check your address, then press "Apply"', zh: '确认地址后点击"申请"', vi: 'Kiểm tra địa chỉ rồi nhấn "Nộp"' } }
+  ];
+
+  featDefs = [
+    { id: 'filter', cat: 'safe', mark: '🛡️', name: { ko: '광고성 글 필터링', en: 'Ad & scam filter', zh: '广告过滤', vi: 'Lọc quảng cáo' }, desc: { ko: '광고·피싱 링크를 자동으로 가려요', en: 'Hides ad and phishing links for you', zh: '自动隐藏广告和钓鱼链接', vi: 'Tự động ẩn quảng cáo và lừa đảo' } },
+    { id: 'trans', cat: 'understand', mark: '🌐', name: { ko: '실시간 번역', en: 'Live translation', zh: '实时翻译', vi: 'Dịch trực tiếp' }, desc: { ko: '이 페이지를 모국어로 바꿔요', en: 'Turns this page into your language', zh: '将此页面翻译成您的语言', vi: 'Dịch trang này sang tiếng của bạn' } },
+    { id: 'sum', cat: 'understand', mark: '📝', name: { ko: '요약', en: 'Summary', zh: '摘要', vi: 'Tóm tắt' }, desc: { ko: '긴 내용을 핵심만 정리해요', en: 'Distills long text to key points', zh: '将长内容提炼为要点', vi: 'Rút gọn nội dung dài' } },
+    { id: 'rec', cat: 'record', mark: '🕙', name: { ko: '화면 기록', en: 'Step history', zh: '步骤记录', vi: 'Ghi lại bước' }, desc: { ko: '방문한 단계를 저장해 다시 봐요', en: 'Saves your steps to revisit', zh: '保存步骤以便回看', vi: 'Lưu các bước để xem lại' } }
+  ];
+
+  sumB = {
+    ko: ['이 페이지에서 주민등록등본을 발급합니다.', '간편인증 로그인이 필요해요.', '무료이며 PDF로 발급돼요.'],
+    en: ['This page issues a residence certificate.', 'Login with Simple Auth is required.', 'It is free and issued as a PDF.'],
+    zh: ['此页面用于开具居民登记誊本。', '需要简易认证登录。', '免费,以 PDF 形式发放。'],
+    vi: ['Trang này cấp giấy chứng nhận cư trú.', 'Cần đăng nhập bằng Xác thực đơn giản.', 'Miễn phí và cấp dưới dạng PDF.']
+  };
+
+  savedItems = [
+    { type: '요약', mark: '📝', title: '주민등록등본 발급', date: '방금' },
+    { type: '길안내', mark: '🧭', title: '건강보험 자격득실확인서', date: '3일 전' },
+    { type: '요약', mark: '📝', title: '국민연금 가입내역', date: '지난주' }
+  ];
+
+  tabDefs = [
+    { id: 'sum', label: '요약본', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 12h5M10 16h5"/></svg>' },
+    { id: 'chat', label: '대화 내용', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z"/></svg>' },
+    { id: 'save', label: '보관함', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M6 4h12v16l-6-3.5L6 20z"/></svg>' },
+    { id: 'my', label: '마이페이지', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>' }
+  ];
+
+  t(o) { return o[this.state.lang]; }
+
+  submitGoal() {
+    const q = (this.state.query || '').trim();
+    this.setState({ tab: 'chat', userGoal: q || null, query: '', cstep: 1, cdone: false });
+  }
+
+  // styles
+  pill(on) {
+    return { display: 'inline-flex', alignItems: 'center', gap: '7px', flex: 'none', height: '38px', padding: '0 15px', borderRadius: '999px', border: '1px solid ' + (on ? '#0a0a0a' : '#e2e2e2'), background: on ? '#0a0a0a' : '#fff', color: on ? '#fff' : '#8a8a8a', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s ease' };
+  }
+  pillDot(on) { return { width: '7px', height: '7px', borderRadius: '50%', background: on ? '#fff' : '#c4c4c4', flex: 'none' }; }
+  langChip(active) {
+    return { minWidth: '30px', height: '26px', padding: '0 8px', borderRadius: '7px', border: '1px solid ' + (active ? '#0a0a0a' : '#e6e6e6'), background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : '#737373', fontFamily: "'Geist Mono', monospace", fontSize: '11px', cursor: 'pointer' };
+  }
+  langBig(active) {
+    return { flex: 1, height: '38px', borderRadius: '9px', border: '1px solid ' + (active ? '#0a0a0a' : '#e6e6e6'), background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : '#525252', fontSize: '12px', fontWeight: 500, cursor: 'pointer' };
+  }
+
+  renderVals() {
+    const lang = this.state.lang;
+    const setTab = id => () => this.setState({ tab: id });
+
+    const langChips = this.langs.map(l => ({
+      label: l.label, full: l.full,
+      style: this.langChip(lang === l.id),
+      bigStyle: this.langBig(lang === l.id),
+      onClick: () => this.setState({ lang: l.id })
+    }));
+
+    const enrich = (f, i, len) => {
+      const on = !!this.state.on[f.id];
+      return {
+        mark: f.mark, name: this.t(f.name), desc: this.t(f.desc),
+        onLabel: on ? this.t(this.UI.on) : this.t(this.UI.off),
+        pillStyle: this.pill(on), pillDotStyle: this.pillDot(on),
+        rowStyle: { display: 'flex', alignItems: 'center', gap: '13px', padding: '14px', borderBottom: i === len - 1 ? 'none' : '1px solid #f4f4f4' },
+        toggle: () => this.setState(st => ({ on: { ...st.on, [f.id]: !st.on[f.id] } }))
+      };
+    };
+    const featGroups = this.catDefs.map(c => {
+      const items = this.featDefs.filter(f => f.cat === c.id);
+      return { label: this.t(c.label), items: items.map((f, i) => enrich(f, i, items.length)) };
+    }).filter(g => g.items.length);
+
+    // chat messages
+    const botBubble = { maxWidth: '85%', background: '#f5f5f5', borderRadius: '4px 14px 14px 14px', padding: '11px 13px' };
+    const userBubble = { maxWidth: '85%', background: '#0a0a0a', color: '#fff', borderRadius: '14px 14px 4px 14px', padding: '11px 13px' };
+    const msgs = [
+      { isPlain: true, text: this.state.userGoal || this.t(this.UI.goal), wrapStyle: { display: 'flex', justifyContent: 'flex-end' }, bubbleStyle: userBubble },
+      { isPlain: true, text: this.t(this.UI.intro), wrapStyle: { display: 'flex', justifyContent: 'flex-start' }, bubbleStyle: botBubble }
+    ];
+    for (let i = 0; i < this.state.cstep; i++) {
+      msgs.push({ isStep: true, num: i + 1, text: this.t(this.steps[i].t), label: this.steps[i].label, wrapStyle: { display: 'flex', justifyContent: 'flex-start' }, bubbleStyle: { ...botBubble, maxWidth: '90%' } });
+    }
+    if (this.state.cdone) msgs.push({ isPlain: true, text: this.t(this.UI.doneMsg), wrapStyle: { display: 'flex', justifyContent: 'flex-start' }, bubbleStyle: botBubble });
+
+    let chatAction;
+    if (this.state.cdone) chatAction = { label: this.t(this.UI.restart), onClick: () => this.setState({ cstep: 1, cdone: false }) };
+    else if (this.state.cstep < 4) chatAction = { label: this.t(this.UI.next), onClick: () => this.setState(st => ({ cstep: st.cstep + 1 })) };
+    else chatAction = { label: this.t(this.UI.finish), onClick: () => this.setState({ cdone: true }) };
+
+    const chipStyle = { fontFamily: "'Geist Mono', monospace", fontSize: '10px', color: '#525252', background: '#f0f0f0', borderRadius: '5px', padding: '2px 6px' };
+    const saved = this.savedItems.map(s => ({ ...s, chipStyle }));
+
+    const myRow = last => ({ display: 'flex', alignItems: 'center', padding: '14px', borderBottom: last ? 'none' : '1px solid #f4f4f4' });
+    const myRows = [
+      { label: '알림', value: 'ON', rowStyle: myRow(false) },
+      { label: '도움말', value: '', rowStyle: myRow(false) },
+      { label: '개인정보', value: '', rowStyle: myRow(true) }
+    ];
+
+    const tabStyle = id => {
+      const active = this.state.tab === id;
+      return { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', color: active ? '#0a0a0a' : '#b0b0b0', fontFamily: 'inherit', fontWeight: active ? 600 : 500 };
+    };
+
+    return {
+      langChips, featGroups, chatMsgs: msgs, chatAction,
+      tHome: tabStyle('home'), tSum: tabStyle('sum'), tChat: tabStyle('chat'), tSave: tabStyle('save'), tMy: tabStyle('my'),
+      onHome: setTab('home'), onSum: setTab('sum'), onChat: setTab('chat'), onSave: setTab('save'), onMy: setTab('my'),
+      goHome: () => this.setState({ tab: 'home' }),
+      goChat: () => this.setState({ tab: 'chat' }),
+      query: this.state.query,
+      onQueryInput: e => this.setState({ query: e.target.value }),
+      onQueryKey: e => { if (e.key === 'Enter') this.submitGoal(); },
+      submitGoal: () => this.submitGoal(),
+      siteName: '정부24',
+      siteUrl: 'www.gov.kr',
+      currentSiteLabel: this.t(this.UI.site),
+      pageTitle: this.t(this.UI.pageTitle),
+      isLogin: !this.state.authed,
+      isAuthed: this.state.authed,
+      login: () => this.setState({ authed: true, tab: 'home' }),
+      guest: () => this.setState({ authed: true, tab: 'home' }),
+      logout: () => this.setState({ authed: false }),
+      loginTagline: this.t(this.UI.loginTagline),
+      loginLabel: this.t(this.UI.loginLabel),
+      guestLabel: this.t(this.UI.guestLabel),
+      logoutLabel: this.t(this.UI.logoutLabel),
+      hasGoal: !!this.state.userGoal,
+      notGoal: !this.state.userGoal,
+      progressLabel: this.t(this.UI.progress),
+      progressStep: this.state.cdone ? this.t(this.UI.finish) : (this.t(this.UI.stepWord) + ' ' + this.state.cstep + '/4'),
+      progressBarStyle: { height: '100%', width: (this.state.cdone ? 100 : Math.round(this.state.cstep / 4 * 100)) + '%', background: '#0a0a0a', borderRadius: '999px', transition: 'width .3s ease' },
+      chatSub: this.t(this.UI.chatSub),
+      chatSuggestions: this.suggDefs.map(s => ({ label: this.t(s), onClick: () => this.setState({ userGoal: this.t(s), tab: 'chat', query: '', cstep: 1, cdone: false }) })),
+      isHome: this.state.tab === 'home',
+      isChat: this.state.tab === 'chat',
+      isSum: this.state.tab === 'sum',
+      isSave: this.state.tab === 'save',
+      isMy: this.state.tab === 'my',
+      goalLabel: this.t(this.UI.goal),
+      helpText: this.t(this.UI.help),
+      helpSub: this.t(this.UI.helpSub),
+      askLabel: this.t(this.UI.ask),
+      featTitle: this.t(this.UI.featTitle),
+      featSub: this.t(this.UI.featSub),
+      safetyText: this.t(this.UI.safety),
+      pressLabel: this.t(this.UI.press),
+      stepWord: this.t(this.UI.stepWord),
+      askPlaceholder: this.t(this.UI.askPh),
+      sumTag: this.t(this.UI.sumTag),
+      sourceLabel: this.t(this.UI.source),
+      langSettingLabel: this.t(this.UI.langSet),
+      myLangLine: this.t(this.UI.myLang),
+      sumBullets: this.sumB[lang].map((t, i) => ({ n: i + 1, t })),
+      saved, myRows
+    };
+  }
+}
+</script>
+</body>
+</html>

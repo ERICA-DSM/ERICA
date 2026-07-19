@@ -1,0 +1,26 @@
+{
+  "database": "wg_db",
+  "engine": "파일 DB (server/data/users.json) — 서버 보관",
+  "version": 1,
+  "stores": {
+    "users": {
+      "keyPath": "email",
+      "fields": {
+        "email": "string — 로그인 식별자(기본키)",
+        "name": "string — 이름",
+        "profile": "object — 온보딩 프로필 (아래 필드들)",
+        "profile.birthday": "string — 생일 (YYYY-MM-DD)",
+        "profile.gender": "string — 성별 (남성/여성/기타/응답 안 함)",
+        "profile.age": "string — 나이",
+        "profile.nationality": "string — 국적",
+        "profile.lang": "string — 모국어 (베트남어/영어/중국어/한국어)",
+        "profile.purpose": "string — 사용 목적 (행정·민원/의료·건강/교육·자녀/취업·근로/금융·세금/기타)",
+        "plan": "string — 구독 플랜 (gemini=무료 | openai=유료)",
+        "usage": "object — { date: YYYY-MM-DD, count: number } 하루 사용량",
+        "token": "string — 로그인 토큰",
+        "createdAt": "string — 생성 시각 (ISO 8601)",
+        "lastLoginAt": "string — 최근 로그인 (ISO 8601)"
+      }
+    }
+  }
+}

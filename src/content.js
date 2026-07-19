@@ -47,8 +47,17 @@ function extractPage() {
 // 추천 링크 하이라이트
 // AI가 준 nextLink의 href/text가 DOM과 정확히 일치하지 않을 수 있으므로
 // (정규화 href) → (정확한 텍스트) → (부분 텍스트) 순으로 견고하게 매칭한다.
-function highlightLink(href, text) {
+// hex(#rrggbb) → rgba 문자열
+function hexToRgba(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if (!m) return `rgba(31,157,85,${alpha})`;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+function highlightLink(href, text, color) {
   clearHighlights();
+  color = color || "#1f9d55"; // 마이페이지에서 정한 색(기본 초록)
   const anchors = [...document.querySelectorAll("a")];
   const norm = (u) => {
     try { return new URL(u, location.href).href.replace(/#.*$/, "").replace(/\/+$/, ""); }
@@ -62,18 +71,60 @@ function highlightLink(href, text) {
   if (!target && wantText) target = anchors.find((a) => atext(a) === wantText);
   if (!target && wantText) target = anchors.find((a) => atext(a).includes(wantText));
   if (!target) return false;
+
   target.classList.add("__wg_highlight");
+  target.style.setProperty("outline", `3px solid ${color}`, "important");
+  target.style.setProperty("outline-offset", "2px", "important");
+  target.style.setProperty("border-radius", "4px", "important");
+  target.style.setProperty("background", hexToRgba(color, 0.1), "important");
+  target.style.setProperty("position", "relative", "important");
+
   const badge = document.createElement("span");
   badge.className = "__wg_badge";
   badge.textContent = "✓ 여기를 누르세요";
+  badge.style.setProperty("background", color, "important");
   target.appendChild(badge);
   target.scrollIntoView({ behavior: "smooth", block: "center" });
   return true;
 }
 
 function clearHighlights() {
-  document.querySelectorAll(".__wg_highlight").forEach((el) => el.classList.remove("__wg_highlight"));
+  document.querySelectorAll(".__wg_highlight").forEach((el) => {
+    el.classList.remove("__wg_highlight");
+    ["outline", "outline-offset", "border-radius", "background", "position"].forEach((p) => el.style.removeProperty(p));
+  });
   document.querySelectorAll(".__wg_badge").forEach((el) => el.remove());
+}
+
+// ---- 광고 가리기: 광고로 판정된 링크 위에 "광고 · AD" 박스를 덮는다 ----
+function coverAds() {
+  clearAdCovers();
+  let count = 0;
+  document.querySelectorAll("a").forEach((a) => {
+    const info = classifyLink(a);
+    if (info.label !== "ad") return;
+    const r = a.getBoundingClientRect();
+    if (r.width < 24 || r.height < 12) return; // 너무 작은 건 스킵
+    a.setAttribute("data-wg-ad", "1");
+    a.style.setProperty("position", "relative", "important");
+    const cover = document.createElement("span");
+    cover.className = "__wg_adcover";
+    cover.textContent = "광고 · AD";
+    Object.assign(cover.style, {
+      position: "absolute", inset: "0", background: "#111", color: "#fff",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: "11px", fontWeight: "700", letterSpacing: ".04em",
+      borderRadius: "4px", zIndex: "2147483000", textDecoration: "none",
+    });
+    cover.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); });
+    a.appendChild(cover);
+    count++;
+  });
+  return count;
+}
+function clearAdCovers() {
+  document.querySelectorAll(".__wg_adcover").forEach((el) => el.remove());
+  document.querySelectorAll("[data-wg-ad]").forEach((el) => { el.style.removeProperty("position"); el.removeAttribute("data-wg-ad"); });
 }
 
 // 하이라이트용 스타일 주입
@@ -96,9 +147,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "WG_EXTRACT") {
     sendResponse(extractPage());
   } else if (msg?.type === "WG_HIGHLIGHT") {
-    sendResponse({ ok: highlightLink(msg.href, msg.text) });
+    sendResponse({ ok: highlightLink(msg.href, msg.text, msg.color) });
   } else if (msg?.type === "WG_CLEAR") {
     clearHighlights();
+    sendResponse({ ok: true });
+  } else if (msg?.type === "WG_FILTER_ADS") {
+    sendResponse({ ok: true, count: coverAds() });
+  } else if (msg?.type === "WG_UNFILTER") {
+    clearAdCovers();
     sendResponse({ ok: true });
   }
   return true; // async response 허용
