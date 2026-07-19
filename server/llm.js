@@ -1,56 +1,25 @@
 // llm.js — 서버에서 우리 키로 Gemini/OpenAI를 호출 (확장에는 키가 없음)
 // 키가 없거나 MOCK=1 이면 목(mock) 응답을 돌려줘 키 없이도 전체 흐름을 데모할 수 있다.
 
-const LANG_NAME = { "한국어": "Korean (한국어)", "영어": "English", "중국어": "Chinese (中文)", "베트남어": "Vietnamese (Tiếng Việt)", ko: "Korean (한국어)", en: "English", zh: "Chinese (中文)", vi: "Vietnamese (Tiếng Việt)" };
+const LANG_NAME = { "한국어": "Korean", "영어": "English", "중국어": "Chinese (中文)", "베트남어": "Vietnamese (Tiếng Việt)", ko: "Korean", en: "English", zh: "Chinese (中文)", vi: "Vietnamese (Tiếng Việt)" };
 const langName = (l) => LANG_NAME[l] || l;
 
 const SYSTEM_PROMPT = (lang) => `당신은 한국 행정·생활 웹사이트를 처음 쓰는 외국인/다문화 가정을 돕는 안내자입니다.
-
-##### OUTPUT LANGUAGE (MOST IMPORTANT) #####
-You MUST write the summary, every steps.text, and every warnings entirely in ${langName(lang)}.
-Do NOT use any other language, even if the page title/content is in a different language.
-(단, 각 step의 label 값은 페이지에 있는 실제 버튼 텍스트이므로 원문 그대로 두세요.)
-############################################
-
-먼저 사용자의 목적(goal)을 정확히 파악하세요. 사용자가 무엇을 "하고 싶은지"(예: 접수 가능한 목록 보기,
-신청서 제출, 서류 발급, 조회 등)를 이해하고, 현재 페이지 내용을 바탕으로 그 목적을 끝까지 이루기 위한
-**전체 과정을 순서대로** 안내하세요. 한 단계만 알려주지 말고, 목적 달성까지 필요한 단계를 모두 적으세요.
+사용자의 목적을 파악하고, 현재 페이지에서 그 목적을 이루기 위해 "지금 이 화면에서 할 수 있는 단계"를 순서대로 안내하세요.
+버튼을 눌러 다른 페이지로 넘어가야 하면 그 단계까지만 안내하고, 이동 후의 화면은 추측해서 지어내지 마세요.
 
 규칙:
-- 위 OUTPUT LANGUAGE 규칙을 반드시 지킵니다(모든 문장을 ${langName(lang)}로).
-  쉬운 말로 설명하고, 어려운 행정용어는 풀어서 씁니다.
-- **지금 이 페이지에서 실제로 할 수 있는 단계**를 순서대로 구체적으로 담습니다(보통 1~5단계).
-  버튼을 눌러 다른 페이지로 이동해야 하면, 그 "이동시키는 단계"까지만 안내하세요. 이동 후의 화면은
-  지금 볼 수 없으므로 추측해서 지어내지 말고, 사용자가 이동한 뒤 그 화면에서 다시 이어서 안내받습니다.
-- steps에는 목적 달성까지의 단계를 순서대로 담습니다(보통 1~5단계).
-- **각 단계는 객체**입니다: text(그 단계에서 무엇을 하는지 ${langName(lang)}로 지시), label(그 단계에서 눌러야 할
-  현재 페이지의 실제 버튼/링크 텍스트 — 링크 목록에서 label=official 우선, 있으면 그 text 그대로. 없으면 빈 문자열 ""),
-  href(그 링크의 href, 없으면 "").
-- 광고/피싱/외부 상업 링크(label이 ad 또는 suspect)는 절대 단계 label로 쓰지 말고 warnings에 경고로 넣습니다.
-- 반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트 금지.
+- 모든 답변 텍스트(summary, 각 step의 text, warnings)는 반드시 ${langName(lang)}로 씁니다. 쉬운 말로, 행정용어는 풀어서.
+- 각 step은 {text, label, href} 객체입니다. text=그 단계에서 할 일 안내(${langName(lang)}).
+  label=그 단계에서 누를 페이지의 실제 버튼/링크 텍스트(페이지 원문 그대로, label=official 우선, 없으면 "").
+  href=그 링크 주소(없으면 "").
+- 광고/피싱 링크(label이 ad 또는 suspect)는 절대 step label로 쓰지 말고 warnings에 경고로 넣습니다.
+- 아래 JSON 형식으로만 답하세요(다른 텍스트 금지):
+{"summary":"...","steps":[{"text":"...","label":"...","href":"..."}],"warnings":["..."]}`;
 
-{
-  "summary": "이 페이지가 무엇을 하는 곳인지, 그리고 사용자의 목적을 이룰 수 있는 곳인지 ${langName(lang)}로 2~3줄",
-  "steps": [
-    { "text": "${langName(lang)}로 1단계 지시", "label": "이 단계에서 누를 페이지의 버튼/링크 텍스트 또는 \"\"", "href": "링크 href 또는 \"\"" },
-    { "text": "2단계 지시", "label": "...", "href": "..." }
-  ],
-  "warnings": ["${langName(lang)}로 무시해야 할 광고/의심 요소 설명"]
-}`;
-
-const SUMMARY_PROMPT = (lang) => `당신은 한국 행정·생활 웹페이지를 외국인/다문화 가정에게 쉽게 요약해 주는 도우미입니다.
-
-##### OUTPUT LANGUAGE (MOST IMPORTANT) #####
-You MUST write the summary and every bullet entirely in ${langName(lang)}.
-Do NOT use any other language, even if the page content is in a different language.
-############################################
-
-현재 페이지의 핵심을 아주 쉬운 말로 요약하세요. 반드시 아래 JSON 형식으로만 답하세요.
-
-{
-  "summary": "이 페이지가 무엇을 하는 곳인지 ${langName(lang)}로 2~3줄",
-  "bullets": ["${langName(lang)}로 핵심 요점 1", "요점 2", "요점 3 (3~5개)"]
-}`;
+const SUMMARY_PROMPT = (lang) => `당신은 한국 웹페이지를 외국인/다문화 가정에게 쉽게 요약해 주는 도우미입니다.
+현재 페이지의 핵심을 반드시 ${langName(lang)}로, 아주 쉬운 말로 요약하세요. 아래 JSON 형식으로만 답하세요(다른 텍스트 금지):
+{"summary":"2~3줄 요약","bullets":["요점1","요점2","요점3"]}`;
 
 function buildUserPrompt({ goal, pageTitle, pageText, links, lang }) {
   const linkList = (links || [])
@@ -66,8 +35,7 @@ ${pageText}
 현재 페이지의 링크 목록(label = official/normal/ad/suspect):
 ${linkList}
 
-=== REPLY LANGUAGE (STRICT) ===
-Write summary, all steps.text, and warnings ONLY in ${langName(lang)}. The page is Korean, but you MUST still answer in ${langName(lang)}. (Keep each step's "label" as the original page text.)`;
+[중요] summary·steps.text·warnings는 반드시 ${langName(lang)}로 작성하세요(label 값만 페이지 원문 유지).`;
 }
 
 function safeParseJson(text) {
@@ -86,7 +54,7 @@ async function callGemini(system, user, { apiKey, model }) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
-      generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
+      generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 1200 },
     }),
   });
   if (!res.ok) throw new Error("Gemini API error: " + res.status + " " + (await res.text()));
@@ -100,7 +68,8 @@ async function callOpenAI(system, user, { apiKey, model }) {
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
     body: JSON.stringify({
       model,
-      temperature: 0.2,
+      temperature: 0.7,
+      max_tokens: 1500,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
@@ -111,6 +80,34 @@ async function callOpenAI(system, user, { apiKey, model }) {
   if (!res.ok) throw new Error("OpenAI API error: " + res.status + " " + (await res.text()));
   const data = await res.json();
   return data?.choices?.[0]?.message?.content || "";
+}
+
+async function callAnthropic(system, user, { apiKey, model }) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1500,
+      temperature: 0.3,
+      system,
+      messages: [{ role: "user", content: user }],
+    }),
+  });
+  if (!res.ok) throw new Error("Anthropic API error: " + res.status + " " + (await res.text()));
+  const data = await res.json();
+  return (data?.content || []).map((b) => b.text || "").join("") || "";
+}
+
+// 실제 LLM 호출: 사용 가능한 키를 우선순위로 선택 (Gemini > OpenAI > Claude)
+async function callLLM(system, user, plan, env) {
+  if (env.GEMINI_API_KEY) {
+    return callGemini(system, user, { apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || "gemini-flash-latest" });
+  }
+  if (env.OPENAI_API_KEY) {
+    return callOpenAI(system, user, { apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || "gpt-4o-mini" });
+  }
+  return callAnthropic(system, user, { apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001" });
 }
 
 // steps를 항상 {text,label,href} 객체 배열로 정규화
@@ -124,7 +121,8 @@ function normalizeSteps(steps) {
 }
 
 function isMock(plan, env) {
-  return env.MOCK === "1" || (plan === "openai" ? !env.OPENAI_API_KEY : !env.GEMINI_API_KEY);
+  if (env.MOCK === "1") return true;
+  return !(env.ANTHROPIC_API_KEY || env.OPENAI_API_KEY || env.GEMINI_API_KEY);
 }
 
 function mockGuide({ goal, lang, pageTitle, links }) {
@@ -149,10 +147,7 @@ export async function guide(payload, plan, env) {
 
   const system = SYSTEM_PROMPT(payload.lang);
   const user = buildUserPrompt(payload);
-  const raw =
-    plan === "openai"
-      ? await callOpenAI(system, user, { apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || "gpt-4o-mini" })
-      : await callGemini(system, user, { apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || "gemini-2.5-flash" });
+  const raw = await callLLM(system, user, plan, env);
 
   const parsed = safeParseJson(raw);
   const steps = normalizeSteps(parsed.steps);
@@ -178,11 +173,8 @@ export async function summarize(payload, plan, env) {
     };
   }
   const system = SUMMARY_PROMPT(payload.lang);
-  const user = `현재 페이지 제목: ${payload.pageTitle}\n\n현재 페이지 본문(일부):\n${payload.pageText}`;
-  const raw =
-    plan === "openai"
-      ? await callOpenAI(system, user, { apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || "gpt-4o-mini" })
-      : await callGemini(system, user, { apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || "gemini-2.5-flash" });
+  const user = `현재 페이지 제목: ${payload.pageTitle}\n\n현재 페이지 본문(일부):\n${payload.pageText}\n\n[중요] summary·bullets는 반드시 ${langName(payload.lang)}로 작성.`;
+  const raw = await callLLM(system, user, plan, env);
   const parsed = safeParseJson(raw);
   return {
     mock: false,
