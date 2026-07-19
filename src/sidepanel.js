@@ -583,6 +583,18 @@ async function renderSaved() {
     el.innerHTML = `<div class="hd-empty">${esc(empty)}</div>`; return;
   }
   el.innerHTML = "";
+  // 전체 삭제 바
+  const clearBar = document.createElement("div"); clearBar.className = "hd-save-clearbar";
+  const clearBtn = document.createElement("button"); clearBtn.className = "hd-save-clear";
+  clearBtn.textContent = { ko: "전체 삭제", en: "Clear all", zh: "全部删除", vi: "Xóa tất cả" }[LANGS[state.lang]];
+  clearBtn.addEventListener("click", async () => {
+    await chrome.storage.local.remove("wg_saved");
+    Object.keys(savedCollapsed).forEach((k) => delete savedCollapsed[k]);
+    renderSaved();
+  });
+  clearBar.appendChild(clearBtn);
+  el.appendChild(clearBar);
+
   SAVE_CATS.forEach((cat) => {
     const items = list.filter((it) => it.type === cat.type);
     if (!items.length) return;

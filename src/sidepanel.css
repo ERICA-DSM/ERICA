@@ -161,6 +161,12 @@ button{ font-family:inherit; cursor:pointer; }
 .hd-save-row.clickable{ cursor:pointer; }
 .hd-save-row.clickable:hover{ background:var(--bg-1); border-radius:8px; }
 
+/* 보관함 전체 삭제 */
+.hd-save-clearbar{ display:flex; justify-content:flex-end; padding:2px 2px 6px; }
+.hd-save-clear{ background:none; border:none; font-family:inherit; font-size:12px; font-weight:600;
+  color:var(--mut); cursor:pointer; padding:4px 6px; border-radius:6px; }
+.hd-save-clear:hover{ background:var(--warn-l); color:var(--warn); }
+
 /* 보관함 카테고리 아코디언 */
 .hd-save-cat{ margin-bottom:6px; }
 .hd-save-cathead{ display:flex; align-items:center; justify-content:space-between; width:100%;
