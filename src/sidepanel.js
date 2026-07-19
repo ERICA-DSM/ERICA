@@ -309,6 +309,26 @@ async function enterApp(account) {
   renderMy();
 }
 
+// 대표 도메인 추출 (같은 사이트 판별용). qnet 하위페이지는 같은 도메인, 정부24는 다른 도메인.
+function registrableDomain(host) {
+  if (!host) return "";
+  const p = host.split(".");
+  if (p.length <= 2) return host;
+  const twoLevel = new Set(["co", "or", "go", "ne", "re", "pe", "ac", "hs", "ms", "es", "kg", "sc"]); // 한국 2단계 도메인(.or.kr 등)
+  if (p[p.length - 1] === "kr" && twoLevel.has(p[p.length - 2])) return p.slice(-3).join(".");
+  return p.slice(-2).join(".");
+}
+
+// 다른 사이트(도메인)로 이동하면 이전에 입력해둔 목표·안내를 초기화
+function clearForNewSite() {
+  $("hero-input").value = "";
+  state.userGoal = "";
+  state.guideResult = null;
+  state.lastPage = null;
+  if (state.tab === "chat") renderChatPage();
+  else if (state.tab === "sum") renderSummary();
+}
+
 async function loadSiteInfo() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -317,6 +337,12 @@ async function loadSiteInfo() {
     try { host = new URL(tab.url).hostname; } catch {}
     $("site-name").textContent = tab.title || host || "현재 사이트";
     $("site-url").textContent = host || (tab.url || "").slice(0, 40) || "—";
+    // 도메인이 실제로 바뀌었을 때만 초기화 (같은 사이트 내 이동은 유지)
+    const domain = registrableDomain(host);
+    if (domain) {
+      if (state.currentSite && domain !== state.currentSite) clearForNewSite();
+      state.currentSite = domain;
+    }
   } catch { /* 특수 페이지 */ }
 }
 
